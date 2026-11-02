@@ -1,0 +1,135 @@
+{
+  "id": "consumption",
+  "source": "World Bank WDI",
+  "code": "NE.CON.PRVT.ZS",
+  "url": "https://api.worldbank.org/v2/country/VNM/indicator/NE.CON.PRVT.ZS?format=json&per_page=200",
+  "unit": "% GDP",
+  "frequency": "annual",
+  "updatedAt": "2026-10-31",
+  "points": [
+    {
+      "year": 1995,
+      "value": 73.61
+    },
+    {
+      "year": 1996,
+      "value": 74.44
+    },
+    {
+      "year": 1997,
+      "value": 71.77
+    },
+    {
+      "year": 1998,
+      "value": 70.89
+    },
+    {
+      "year": 1999,
+      "value": 68.65
+    },
+    {
+      "year": 2000,
+      "value": 66.46
+    },
+    {
+      "year": 2001,
+      "value": 64.86
+    },
+    {
+      "year": 2002,
+      "value": 65.09
+    },
+    {
+      "year": 2003,
+      "value": 66.26
+    },
+    {
+      "year": 2004,
+      "value": 65.08
+    },
+    {
+      "year": 2005,
+      "value": 65.49
+    },
+    {
+      "year": 2006,
+      "value": 65.09
+    },
+    {
+      "year": 2007,
+      "value": 68.11
+    },
+    {
+      "year": 2008,
+      "value": 70.87
+    },
+    {
+      "year": 2009,
+      "value": 68.49
+    },
+    {
+      "year": 2010,
+      "value": 58.43
+    },
+    {
+      "year": 2011,
+      "value": 56.48
+    },
+    {
+      "year": 2012,
+      "value": 55.7
+    },
+    {
+      "year": 2013,
+      "value": 56.88
+    },
+    {
+      "year": 2014,
+      "value": 57.02
+    },
+    {
+      "year": 2015,
+      "value": 59.33
+    },
+    {
+      "year": 2016,
+      "value": 58.74
+    },
+    {
+      "year": 2017,
+      "value": 58
+    },
+    {
+      "year": 2018,
+      "value": 57.08
+    },
+    {
+      "year": 2019,
+      "value": 56.83
+    },
+    {
+      "year": 2020,
+      "value": 55.97
+    },
+    {
+      "year": 2021,
+      "value": 55.52
+    },
+    {
+      "year": 2022,
+      "value": 54.68
+    },
+    {
+      "year": 2023,
+      "value": 54.02
+    },
+    {
+      "year": 2024,
+      "value": 53.56
+    },
+    {
+      "year": 2025,
+      "value": 53.21
+    }
+  ]
+}

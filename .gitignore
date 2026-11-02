@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# giọng đọc đã tạo (Google TTS)
+/.cache

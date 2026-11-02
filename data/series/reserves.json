@@ -1,0 +1,135 @@
+{
+  "id": "reserves",
+  "source": "World Bank WDI",
+  "code": "FI.RES.TOTL.CD",
+  "url": "https://api.worldbank.org/v2/country/VNM/indicator/FI.RES.TOTL.CD?format=json&per_page=200",
+  "unit": "tỷ USD",
+  "frequency": "annual",
+  "updatedAt": "2026-10-31",
+  "points": [
+    {
+      "year": 1995,
+      "value": 1.32
+    },
+    {
+      "year": 1996,
+      "value": 1.74
+    },
+    {
+      "year": 1997,
+      "value": 1.99
+    },
+    {
+      "year": 1998,
+      "value": 2
+    },
+    {
+      "year": 1999,
+      "value": 3.33
+    },
+    {
+      "year": 2000,
+      "value": 3.42
+    },
+    {
+      "year": 2001,
+      "value": 3.67
+    },
+    {
+      "year": 2002,
+      "value": 4.12
+    },
+    {
+      "year": 2003,
+      "value": 6.22
+    },
+    {
+      "year": 2004,
+      "value": 7.04
+    },
+    {
+      "year": 2005,
+      "value": 9.05
+    },
+    {
+      "year": 2006,
+      "value": 13.38
+    },
+    {
+      "year": 2007,
+      "value": 23.48
+    },
+    {
+      "year": 2008,
+      "value": 23.89
+    },
+    {
+      "year": 2009,
+      "value": 16.45
+    },
+    {
+      "year": 2010,
+      "value": 12.47
+    },
+    {
+      "year": 2011,
+      "value": 13.54
+    },
+    {
+      "year": 2012,
+      "value": 25.57
+    },
+    {
+      "year": 2013,
+      "value": 25.89
+    },
+    {
+      "year": 2014,
+      "value": 34.19
+    },
+    {
+      "year": 2015,
+      "value": 28.25
+    },
+    {
+      "year": 2016,
+      "value": 36.53
+    },
+    {
+      "year": 2017,
+      "value": 49.08
+    },
+    {
+      "year": 2018,
+      "value": 55.45
+    },
+    {
+      "year": 2019,
+      "value": 78.33
+    },
+    {
+      "year": 2020,
+      "value": 94.83
+    },
+    {
+      "year": 2021,
+      "value": 109.37
+    },
+    {
+      "year": 2022,
+      "value": 86.54
+    },
+    {
+      "year": 2023,
+      "value": 92.24
+    },
+    {
+      "year": 2024,
+      "value": 83.08
+    },
+    {
+      "year": 2025,
+      "value": 85.58
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "id": "savings",
+  "source": "World Bank WDI",
+  "code": "NY.GNS.ICTR.ZS",
+  "url": "https://api.worldbank.org/v2/country/VNM/indicator/NY.GNS.ICTR.ZS?format=json&per_page=200",
+  "unit": "% GDP",
+  "frequency": "annual",
+  "updatedAt": "2026-10-31",
+  "points": [
+    {
+      "year": 1996,
+      "value": 21.2
+    },
+    {
+      "year": 1997,
+      "value": 21.8
+    },
+    {
+      "year": 1998,
+      "value": 23.34
+    },
+    {
+      "year": 1999,
+      "value": 26.87
+    },
+    {
+      "year": 2000,
+      "value": 31.25
+    },
+    {
+      "year": 2001,
+      "value": 31.3
+    },
+    {
+      "year": 2002,
+      "value": 32.53
+    },
+    {
+      "year": 2003,
+      "value": 31.49
+    },
+    {
+      "year": 2004,
+      "value": 33.47
+    },
+    {
+      "year": 2005,
+      "value": 33.08
+    },
+    {
+      "year": 2006,
+      "value": 33.33
+    },
+    {
+      "year": 2007,
+      "value": 31.84
+    },
+    {
+      "year": 2008,
+      "value": 27.9
+    },
+    {
+      "year": 2009,
+      "value": 27.5
+    },
+    {
+      "year": 2010,
+      "value": 33.44
+    },
+    {
+      "year": 2011,
+      "value": 35.77
+    },
+    {
+      "year": 2012,
+      "value": 34.87
+    },
+    {
+      "year": 2013,
+      "value": 33.2
+    },
+    {
+      "year": 2014,
+      "value": 32.99
+    },
+    {
+      "year": 2015,
+      "value": 28.07
+    },
+    {
+      "year": 2016,
+      "value": 28.47
+    },
+    {
+      "year": 2017,
+      "value": 28.86
+    },
+    {
+      "year": 2018,
+      "value": 30.93
+    },
+    {
+      "year": 2019,
+      "value": 31.33
+    },
+    {
+      "year": 2020,
+      "value": 33.01
+    },
+    {
+      "year": 2021,
+      "value": 32.6
+    },
+    {
+      "year": 2022,
+      "value": 33.05
+    },
+    {
+      "year": 2023,
+      "value": 35
+    },
+    {
+      "year": 2024,
+      "value": 37.04
+    },
+    {
+      "year": 2025,
+      "value": 37.68
+    }
+  ]
+}

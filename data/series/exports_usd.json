@@ -1,0 +1,171 @@
+{
+  "id": "exports_usd",
+  "source": "World Bank WDI",
+  "code": "NE.EXP.GNFS.CD",
+  "url": "https://api.worldbank.org/v2/country/VNM/indicator/NE.EXP.GNFS.CD?format=json&per_page=200",
+  "unit": "tỷ USD",
+  "frequency": "annual",
+  "updatedAt": "2026-10-31",
+  "points": [
+    {
+      "year": 1986,
+      "value": 1.74
+    },
+    {
+      "year": 1987,
+      "value": 2.2
+    },
+    {
+      "year": 1988,
+      "value": 1
+    },
+    {
+      "year": 1989,
+      "value": 1.5
+    },
+    {
+      "year": 1990,
+      "value": 2.33
+    },
+    {
+      "year": 1991,
+      "value": 2.97
+    },
+    {
+      "year": 1992,
+      "value": 3.43
+    },
+    {
+      "year": 1993,
+      "value": 3.79
+    },
+    {
+      "year": 1994,
+      "value": 5.54
+    },
+    {
+      "year": 1995,
+      "value": 6.8
+    },
+    {
+      "year": 1996,
+      "value": 10.08
+    },
+    {
+      "year": 1997,
+      "value": 11.57
+    },
+    {
+      "year": 1998,
+      "value": 12.2
+    },
+    {
+      "year": 1999,
+      "value": 14.33
+    },
+    {
+      "year": 2000,
+      "value": 16.81
+    },
+    {
+      "year": 2001,
+      "value": 18
+    },
+    {
+      "year": 2002,
+      "value": 19.19
+    },
+    {
+      "year": 2003,
+      "value": 22.42
+    },
+    {
+      "year": 2004,
+      "value": 27.13
+    },
+    {
+      "year": 2005,
+      "value": 36.71
+    },
+    {
+      "year": 2006,
+      "value": 44.94
+    },
+    {
+      "year": 2007,
+      "value": 54.59
+    },
+    {
+      "year": 2008,
+      "value": 69.72
+    },
+    {
+      "year": 2009,
+      "value": 66.37
+    },
+    {
+      "year": 2010,
+      "value": 79.75
+    },
+    {
+      "year": 2011,
+      "value": 105.59
+    },
+    {
+      "year": 2012,
+      "value": 124.15
+    },
+    {
+      "year": 2013,
+      "value": 142.76
+    },
+    {
+      "year": 2014,
+      "value": 162.48
+    },
+    {
+      "year": 2015,
+      "value": 174.47
+    },
+    {
+      "year": 2016,
+      "value": 190.53
+    },
+    {
+      "year": 2017,
+      "value": 230.04
+    },
+    {
+      "year": 2018,
+      "value": 261.8
+    },
+    {
+      "year": 2019,
+      "value": 284.74
+    },
+    {
+      "year": 2020,
+      "value": 292.48
+    },
+    {
+      "year": 2021,
+      "value": 343.94
+    },
+    {
+      "year": 2022,
+      "value": 386.24
+    },
+    {
+      "year": 2023,
+      "value": 376.27
+    },
+    {
+      "year": 2024,
+      "value": 429.48
+    },
+    {
+      "year": 2025,
+      "value": 505.66
+    }
+  ]
+}

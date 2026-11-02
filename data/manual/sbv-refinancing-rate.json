@@ -1,0 +1,24 @@
+{
+  "id": "sbv_refinancing_rate",
+  "name": "Lãi suất tái cấp vốn của Ngân hàng Nhà nước",
+  "unit": "%/năm",
+  "note": "Chỉ gồm các mốc đã đối chiếu được với nguồn. Không đầy đủ: thiếu nhiều lần điều chỉnh giai đoạn 2009–2017. 'approx: true' nghĩa là nguồn chỉ nêu tháng, không nêu ngày hiệu lực.",
+  "changes": [
+    { "date": "2008-05-19", "value": 13, "source": "https://bovagau.vn/nhin-lai-nhung-lan-viet-nam-that-chat-roi-noi-long-tien-te-lai-suat-dieu-hanh-tung-len-15-lam-phat-van-gan-23-5242" },
+    { "date": "2008-06", "approx": true, "value": 15, "source": "https://tapchicongthuong.vn/thi-truong-chung-khoan-viet-nam-lieu-co-lap-lai-lich-su-khi-lai-suat-dieu-hanh-lien-tuc-giam-106278.htm" },
+    { "date": "2009-02", "approx": true, "value": 7, "source": "https://tapchicongthuong.vn/thi-truong-chung-khoan-viet-nam-lieu-co-lap-lai-lich-su-khi-lai-suat-dieu-hanh-lien-tuc-giam-106278.htm" },
+    { "date": "2010-11-05", "value": 9, "source": "https://baochinhphu.vn/ngan-hang-nha-nuoc-dieu-chinh-lai-suat-tai-cap-von-10265087.htm" },
+    { "date": "2011-03-08", "value": 12, "source": "https://baochinhphu.vn/ngan-hang-nha-nuoc-dieu-chinh-lai-suat-tai-cap-von-10265087.htm" },
+    { "date": "2011-10", "approx": true, "value": 15, "source": "https://tapchicongthuong.vn/thi-truong-chung-khoan-viet-nam-lieu-co-lap-lai-lich-su-khi-lai-suat-dieu-hanh-lien-tuc-giam-106278.htm" },
+    { "date": "2017-07-10", "value": 6.25, "source": "https://cafef.vn/giam-lai-suat-dieu-hanh-co-hoi-vay-tai-cap-von-trai-phieu-vamc-lai-suat-re-hon-20170716123340731.chn" },
+    { "date": "2019-09-16", "value": 6, "source": "https://thitruongtaichinhtiente.vn/dieu-chinh-giam-lai-suat-dieu-hanh-cua-ngan-hang-nha-nuoc-viet-nam-23961.html" },
+    { "date": "2020-03-17", "value": 5, "source": "https://cafef.vn/an-tuong-nam-2020-lai-suat-giam-ky-luc-20201223101737451.chn" },
+    { "date": "2020-05-13", "value": 4.5, "source": "https://cafef.vn/an-tuong-nam-2020-lai-suat-giam-ky-luc-20201223101737451.chn" },
+    { "date": "2020-10-01", "value": 4, "source": "https://thuvienphapluat.vn/van-ban/Tien-te-Ngan-hang/Quyet-dinh-1728-QD-NHNN-2020-lai-suat-tai-cap-von-lai-suat-tai-chiet-khau-trong-thanh-toan-dien-tu-455188.aspx" },
+    { "date": "2022-09-23", "value": 5, "source": "https://thuvienphapluat.vn/chinh-sach-phap-luat-moi/vn/ho-tro-phap-luat/chinh-sach-moi/42743/quyet-dinh-1606-qd-nhnn-tang-lai-suat-tai-cap-von-tai-chiet-khau" },
+    { "date": "2022-10-25", "value": 6, "source": "https://vnubw.org.vn/tin-tuc/t7848/ngan-hang-nha-nuoc-viet-nam-dieu-chinh-cac-muc-lai-suat-dieu-hanh" },
+    { "date": "2023-04-03", "value": 5.5, "source": "https://thuvienphapluat.vn/chinh-sach-phap-luat-moi/vn/ho-tro-phap-luat/chinh-sach-moi/47507/tu-ngay-03-4-2023-muc-lai-suat-tai-cap-von-la-5-5-nam" },
+    { "date": "2023-05-25", "value": 5, "source": "https://vnubw.org.vn/tin-tuc/t8312/ngan-hang-nha-nuoc-lan-thu-3-giam-lai-suat-dieu-hanh-trong-nam-2023" },
+    { "date": "2023-06-19", "value": 4.5, "source": "https://vnubw.org.vn/tin-tuc/t8363/nhnn-tiep-tuc-giam-lai-suat-dieu-hanh-lan-thu-4-trong-nam-2023" }
+  ]
+}

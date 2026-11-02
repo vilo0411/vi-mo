@@ -1,0 +1,119 @@
+{
+  "id": "gov_revenue",
+  "source": "IMF World Economic Outlook",
+  "code": "rev",
+  "url": "https://www.imf.org/external/datamapper/api/v1/rev/VNM",
+  "unit": "% GDP",
+  "frequency": "annual",
+  "updatedAt": "2026-10-31",
+  "points": [
+    {
+      "year": 1998,
+      "value": 15.92
+    },
+    {
+      "year": 1999,
+      "value": 15.46
+    },
+    {
+      "year": 2000,
+      "value": 16.18
+    },
+    {
+      "year": 2001,
+      "value": 17
+    },
+    {
+      "year": 2002,
+      "value": 17.89
+    },
+    {
+      "year": 2003,
+      "value": 19.64
+    },
+    {
+      "year": 2004,
+      "value": 19.29
+    },
+    {
+      "year": 2005,
+      "value": 19.67
+    },
+    {
+      "year": 2006,
+      "value": 20.73
+    },
+    {
+      "year": 2007,
+      "value": 20.56
+    },
+    {
+      "year": 2008,
+      "value": 20.93
+    },
+    {
+      "year": 2009,
+      "value": 20.15
+    },
+    {
+      "year": 2010,
+      "value": 21.47
+    },
+    {
+      "year": 2011,
+      "value": 20.32
+    },
+    {
+      "year": 2012,
+      "value": 18
+    },
+    {
+      "year": 2013,
+      "value": 18.49
+    },
+    {
+      "year": 2014,
+      "value": 17.74
+    },
+    {
+      "year": 2015,
+      "value": 19.19
+    },
+    {
+      "year": 2016,
+      "value": 19.07
+    },
+    {
+      "year": 2017,
+      "value": 19.57
+    },
+    {
+      "year": 2018,
+      "value": 19.46
+    },
+    {
+      "year": 2019,
+      "value": 19.41
+    },
+    {
+      "year": 2020,
+      "value": 18.39
+    },
+    {
+      "year": 2021,
+      "value": 18.69
+    },
+    {
+      "year": 2022,
+      "value": 18.87
+    },
+    {
+      "year": 2023,
+      "value": 17.06
+    },
+    {
+      "year": 2024,
+      "value": 17.58
+    }
+  ]
+}

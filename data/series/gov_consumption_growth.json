@@ -1,0 +1,135 @@
+{
+  "id": "gov_consumption_growth",
+  "source": "World Bank WDI",
+  "code": "NE.CON.GOVT.KD.ZG",
+  "url": "https://api.worldbank.org/v2/country/VNM/indicator/NE.CON.GOVT.KD.ZG?format=json&per_page=200",
+  "unit": "%/năm",
+  "frequency": "annual",
+  "updatedAt": "2026-10-31",
+  "points": [
+    {
+      "year": 1995,
+      "value": 8.4
+    },
+    {
+      "year": 1996,
+      "value": 7.43
+    },
+    {
+      "year": 1997,
+      "value": 4
+    },
+    {
+      "year": 1998,
+      "value": 3.22
+    },
+    {
+      "year": 1999,
+      "value": -5.7
+    },
+    {
+      "year": 2000,
+      "value": 5.01
+    },
+    {
+      "year": 2001,
+      "value": 6.6
+    },
+    {
+      "year": 2002,
+      "value": 5.38
+    },
+    {
+      "year": 2003,
+      "value": 7.19
+    },
+    {
+      "year": 2004,
+      "value": 7.77
+    },
+    {
+      "year": 2005,
+      "value": 8.2
+    },
+    {
+      "year": 2006,
+      "value": 8.5
+    },
+    {
+      "year": 2007,
+      "value": 8.9
+    },
+    {
+      "year": 2008,
+      "value": 7.52
+    },
+    {
+      "year": 2009,
+      "value": 7.6
+    },
+    {
+      "year": 2010,
+      "value": 12.28
+    },
+    {
+      "year": 2011,
+      "value": 4.29
+    },
+    {
+      "year": 2012,
+      "value": 8.5
+    },
+    {
+      "year": 2013,
+      "value": 7.32
+    },
+    {
+      "year": 2014,
+      "value": 2.25
+    },
+    {
+      "year": 2015,
+      "value": 7.84
+    },
+    {
+      "year": 2016,
+      "value": 3.84
+    },
+    {
+      "year": 2017,
+      "value": 5.61
+    },
+    {
+      "year": 2018,
+      "value": 4.68
+    },
+    {
+      "year": 2019,
+      "value": 5.44
+    },
+    {
+      "year": 2020,
+      "value": 1.24
+    },
+    {
+      "year": 2021,
+      "value": 4.55
+    },
+    {
+      "year": 2022,
+      "value": 2.96
+    },
+    {
+      "year": 2023,
+      "value": 4.61
+    },
+    {
+      "year": 2024,
+      "value": 5.8
+    },
+    {
+      "year": 2025,
+      "value": 11.89
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "id": "policy_rate",
+  "source": "Ngân hàng Nhà nước (tổng hợp thủ công)",
+  "code": "data/manual/sbv-refinancing-rate.json",
+  "url": "https://www.sbv.gov.vn",
+  "unit": "%/năm (cuối năm)",
+  "frequency": "annual",
+  "updatedAt": "2026-10-31",
+  "points": [
+    {
+      "year": 2010,
+      "value": 9
+    },
+    {
+      "year": 2011,
+      "value": 15
+    },
+    {
+      "year": 2017,
+      "value": 6.25
+    },
+    {
+      "year": 2018,
+      "value": 6.25
+    },
+    {
+      "year": 2019,
+      "value": 6
+    },
+    {
+      "year": 2020,
+      "value": 4
+    },
+    {
+      "year": 2021,
+      "value": 4
+    },
+    {
+      "year": 2022,
+      "value": 6
+    },
+    {
+      "year": 2023,
+      "value": 4.5
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "id": "deposit_rate",
+  "source": "World Bank WDI",
+  "code": "FR.INR.DPST",
+  "url": "https://api.worldbank.org/v2/country/VNM/indicator/FR.INR.DPST?format=json&per_page=200",
+  "unit": "%/năm",
+  "frequency": "annual",
+  "updatedAt": "2026-10-31",
+  "points": [
+    {
+      "year": 1993,
+      "value": 22.04
+    },
+    {
+      "year": 1997,
+      "value": 8.51
+    },
+    {
+      "year": 1998,
+      "value": 9.23
+    },
+    {
+      "year": 1999,
+      "value": 7.37
+    },
+    {
+      "year": 2000,
+      "value": 3.65
+    },
+    {
+      "year": 2001,
+      "value": 5.3
+    },
+    {
+      "year": 2002,
+      "value": 6.45
+    },
+    {
+      "year": 2003,
+      "value": 6.62
+    },
+    {
+      "year": 2004,
+      "value": 6.17
+    },
+    {
+      "year": 2005,
+      "value": 7.15
+    },
+    {
+      "year": 2006,
+      "value": 7.63
+    },
+    {
+      "year": 2007,
+      "value": 7.49
+    },
+    {
+      "year": 2008,
+      "value": 12.73
+    },
+    {
+      "year": 2009,
+      "value": 7.91
+    },
+    {
+      "year": 2010,
+      "value": 11.19
+    },
+    {
+      "year": 2011,
+      "value": 13.99
+    },
+    {
+      "year": 2012,
+      "value": 10.5
+    },
+    {
+      "year": 2013,
+      "value": 7.14
+    },
+    {
+      "year": 2014,
+      "value": 5.76
+    },
+    {
+      "year": 2015,
+      "value": 4.75
+    },
+    {
+      "year": 2016,
+      "value": 5.04
+    },
+    {
+      "year": 2017,
+      "value": 4.81
+    },
+    {
+      "year": 2018,
+      "value": 4.74
+    },
+    {
+      "year": 2019,
+      "value": 4.97
+    },
+    {
+      "year": 2020,
+      "value": 4.12
+    },
+    {
+      "year": 2021,
+      "value": 3.38
+    },
+    {
+      "year": 2022,
+      "value": 3.82
+    },
+    {
+      "year": 2023,
+      "value": 4.78
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "note": "Số công bố cho các khái niệm không có chuỗi số liệu theo năm. Mỗi số một mốc, có nguồn. 'approx: true' nghĩa là số ước tính, chưa phải số chốt chính thức. Cần đối chiếu lại với NHNN / Bộ Tài chính khi cập nhật.",
+  "items": [
+    {
+      "id": "credit_quota",
+      "value": 16,
+      "unit": "%",
+      "year": 2025,
+      "label": "Chỉ tiêu tăng tín dụng cả năm",
+      "detail": "NHNN dự kiến tín dụng toàn hệ thống năm 2025 tăng khoảng 16% (năm 2024: 15%), có điều chỉnh theo diễn biến thực tế (Chỉ thị 01/CT-NHNN ngày 20/1/2025).",
+      "source": "https://div.gov.vn/ngan-hang-nha-nuoc-du-kien-tang-truong-tin-dung-toan-he-thong-nam-2025-khoang-16"
+    },
+    {
+      "id": "public_investment",
+      "value": 80.3,
+      "unit": "%",
+      "year": 2024,
+      "label": "Giải ngân so với kế hoạch",
+      "detail": "Đến 31/12/2024 giải ngân 548.569 tỷ đồng, đạt 80,32% kế hoạch Thủ tướng giao (72,9% tổng kế hoạch). Con số \"93%\" hay gặp trên báo là lũy kế tới 31/1/2025.",
+      "source": "https://thesaigontimes.vn/giai-ngan-von-nam-2024-dat-gan-73-ke-hoach/"
+    },
+    {
+      "id": "remittances",
+      "value": 16,
+      "unit": "tỷ USD",
+      "year": 2024,
+      "approx": true,
+      "label": "Kiều hối về cả nước (ước tính)",
+      "detail": "Kiều hối về Việt Nam năm 2024 ước khoảng 16 tỷ USD, tương đương năm 2023. Riêng TP.HCM (số chính thức) 9,55 tỷ USD.",
+      "source": "https://doanhnghiephoinhap.vn/kieu-hoi-ve-viet-nam-nam-2024-dat-16-ty-usd-92472.html"
+    }
+  ]
+}
