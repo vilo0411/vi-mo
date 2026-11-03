@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { IndicatorProfile } from "@/content/indicatorProfiles";
+import { BASIC_QUESTIONS, type IndicatorProfile } from "@/content/indicatorProfiles";
 import RichText from "./RichText";
 
 type Props = { profile: IndicatorProfile; onMetric?: (id: string) => void };
@@ -52,6 +52,16 @@ export function WhySection({ profile, onMetric }: Props) {
   );
 }
 
+function QuestionList({ title, hint, items }: { title: string; hint: string; items: string[] }) {
+  return (
+    <div>
+      <Heading>{title} <span className="normal-case tracking-normal">· {items.length}</span></Heading>
+      <p className="text-xs text-muted -mt-1 mb-1.5">{hint}</p>
+      <ul className="list-disc pl-4 space-y-1 marker:text-muted">{items.map((q) => <li key={q}>{q}</li>)}</ul>
+    </div>
+  );
+}
+
 export function AnalysisSection({ profile, onMetric }: Props) {
   const { breakdowns, questions } = profile;
   return (
@@ -64,14 +74,9 @@ export function AnalysisSection({ profile, onMetric }: Props) {
           ))}
         </ul>
       </div>
-      <div>
-        <Heading>Câu hỏi cơ bản</Heading>
-        <ul className="list-disc pl-4 space-y-1 marker:text-muted">{questions.basic.map((q) => <li key={q}>{q}</li>)}</ul>
-      </div>
-      <div>
-        <Heading>Câu hỏi nâng cao</Heading>
-        <ul className="list-disc pl-4 space-y-1 marker:text-muted">{questions.advanced.map((q) => <li key={q}>{q}</li>)}</ul>
-      </div>
+      <QuestionList title="Câu hỏi cơ bản" hint="Nên hỏi với mọi con số vĩ mô" items={BASIC_QUESTIONS} />
+      <QuestionList title="Câu hỏi khám phá" hint="Tìm nguyên nhân" items={questions.explore} />
+      <QuestionList title="Câu hỏi quyết định" hint="Nếu bạn là người ra chính sách" items={questions.decide} />
     </div>
   );
 }

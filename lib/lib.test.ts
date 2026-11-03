@@ -307,6 +307,10 @@ describe("bản đồ con và bài học", () => {
       expect(INDICATOR_BY_ID[id], id).toBeDefined();
       const texts = [...p.nuances, p.whyMatters, p.whenMisleading, p.worked.note, ...p.breakdowns.map((b) => b.reveals)];
       for (const ref of texts.flatMap(refsIn)) expect(known.has(ref), `${id}/${ref}`).toBe(true);
+      expect(p.breakdowns.length, id).toBeGreaterThanOrEqual(4);
+      expect(p.breakdowns.length, id).toBeLessThanOrEqual(6);
+      expect(p.questions.explore.length, id).toBeGreaterThanOrEqual(2);
+      expect(p.questions.decide.length, id).toBeGreaterThanOrEqual(1);
     }
   });
 

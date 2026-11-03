@@ -13,10 +13,21 @@ export type IndicatorProfile = {
   worked: { title: string; rows: { label: string; value: string }[]; note: string };
   whyMatters: string;
   whenMisleading: string;
-  /** Chia nhỏ con số theo chiều nào thì thấy gì */
+  /** 4–6 chiều: chia nhỏ con số theo chiều nào thì thấy gì */
   breakdowns: { by: string; reveals: string }[];
-  questions: { basic: string[]; advanced: string[] };
+  /** Câu hỏi riêng của chỉ số; câu hỏi cơ bản dùng chung nằm trong BASIC_QUESTIONS */
+  questions: { explore: string[]; decide: string[] };
 };
+
+/** Sáu câu nên hỏi trước với bất kỳ con số vĩ mô nào. */
+export const BASIC_QUESTIONS = [
+  "So với kỳ trước và cùng kỳ năm trước, con số đổi bao nhiêu?",
+  "Mức này có nằm trong biên độ dao động thường thấy của chính chỉ số này không?",
+  "So với mục tiêu hoặc kế hoạch Nhà nước đặt ra thì cao hay thấp?",
+  "Thay đổi bắt đầu từ khi nào, đột ngột hay từ từ?",
+  "Đây là số sơ bộ hay số đã chốt, và cách tính có gì thay đổi không?",
+  "Nguyên nhân chính đến từ trong nước hay từ bên ngoài?",
+];
 
 export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
   cpi: {
@@ -45,10 +56,12 @@ export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
       { by: "Giá do Nhà nước quản lý", reveals: "tách phần tăng do điều chỉnh giá dịch vụ công khỏi phần tăng do thị trường" },
       { by: "Lạm phát cơ bản", reveals: "bỏ lương thực, năng lượng và giá quản lý để thấy xu hướng nền" },
       { by: "Khu vực và tỉnh thành", reveals: "thấy giá ở đâu tăng nhanh hơn, ví dụ khác biệt giữa thành thị và nông thôn" },
+      { by: "Tháng trong năm", reveals: "tách phần tăng theo mùa, như dịp Tết, khỏi xu hướng thật" },
+      { by: "Hàng nhập khẩu và hàng trong nước", reveals: "ước lượng phần giá do [[fx_rate|tỷ giá]] và [[oil_price|giá thế giới]] mang vào" },
     ],
     questions: {
-      basic: ["Con số này so với tháng trước, cùng kỳ năm trước hay bình quân năm?", "Nhóm hàng nào đóng góp nhiều nhất vào đợt tăng này?", "Lạm phát đang cao hơn hay thấp hơn mục tiêu của Quốc hội?"],
-      advanced: ["Lạm phát cơ bản đi cùng hướng hay ngược hướng với CPI?", "Đợt tăng này đến từ cầu tăng hay từ chi phí đầu vào?", "Tỷ giá và giá dầu có giải thích được phần lớn đợt tăng không?"],
+      explore: ["Nhóm hàng nào đóng góp nhiều nhất vào đợt tăng này?", "Lạm phát cơ bản đi cùng hướng hay ngược hướng với CPI?", "Tỷ giá và giá dầu có giải thích được phần lớn đợt tăng không?"],
+      decide: ["Đợt tăng này do cầu nóng lên, nên cần hãm lại, hay do chi phí đầu vào, nên tăng lãi suất cũng ít tác dụng?"],
     },
   },
 
@@ -78,10 +91,11 @@ export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
       { by: "So với lãi suất Fed", reveals: "khoảng cách với [[fed_rate|Fed]] càng hẹp thì sức ép lên tỷ giá càng lớn" },
       { by: "So với lãi suất cho vay", reveals: "xem quyết định có truyền tới doanh nghiệp không, và trễ bao lâu" },
       { by: "Theo công cụ", reveals: "so tái cấp vốn với lãi suất thị trường mở để biết công cụ nào đang thực sự có tác dụng" },
+      { by: "Theo từng lần điều chỉnh", reveals: "xem mỗi lần đổi đi kèm sự kiện gì: lạm phát tăng, tỷ giá căng hay kinh tế suy yếu" },
     ],
     questions: {
-      basic: ["Lần điều chỉnh gần nhất là tăng hay giảm, và bao nhiêu điểm phần trăm?", "Lãi suất này đang cao hơn hay thấp hơn lạm phát?", "Vì sao Ngân hàng Nhà nước chọn thời điểm này?"],
-      advanced: ["Lãi suất cho vay đã phản ứng chưa, sau bao nhiêu tháng?", "Khoảng cách với lãi suất Fed đang tạo sức ép lên tỷ giá không?", "Room tín dụng và thị trường mở đang đi cùng hướng hay ngược hướng?"],
+      explore: ["Lãi suất cho vay đã phản ứng chưa, sau bao lâu?", "Khoảng cách với lãi suất Fed đang tạo sức ép lên tỷ giá không?", "Room tín dụng và thị trường mở đang đi cùng hướng hay ngược hướng với lãi suất?"],
+      decide: ["Với lạm phát, tỷ giá và tăng trưởng hiện tại, Ngân hàng Nhà nước nên ưu tiên giữ giá trị đồng tiền hay đỡ tăng trưởng?"],
     },
   },
 
@@ -110,10 +124,11 @@ export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
       { by: "Giá vàng và đô la tự do", reveals: "người dân có đang chạy khỏi tiền đồng để giữ giá trị không" },
       { by: "Lãi suất huy động dài hạn", reveals: "người gửi tiền đòi bù bao nhiêu cho lạm phát tương lai" },
       { by: "Lương và giá bán của doanh nghiệp", reveals: "kỳ vọng đã đi vào quyết định thực tế hay mới chỉ là lời nói" },
+      { by: "Món hàng mua hằng ngày", reveals: "xăng và thực phẩm tăng giá thường định hình cảm nhận của người dân nhanh hơn con số công bố" },
     ],
     questions: {
-      basic: ["Người dân xung quanh có đang tích trữ vàng hay đô la không?", "Doanh nghiệp có tăng giá trước khi chi phí tăng không?"],
-      advanced: ["Một cú sốc giá gần đây có ngấm vào lương không, hay qua đi nhanh?", "Lời nói và hành động của Ngân hàng Nhà nước có khớp nhau để giữ niềm tin không?"],
+      explore: ["Người dân và doanh nghiệp có đang tích trữ vàng, đô la hoặc tăng giá trước khi chi phí tăng không?", "Một cú sốc giá gần đây có ngấm vào lương không, hay qua đi nhanh?"],
+      decide: ["Lời nói và hành động của Ngân hàng Nhà nước có đủ nhất quán để giữ niềm tin, hay cần một động thái mạnh hơn?"],
     },
   },
 };
@@ -126,7 +141,7 @@ export function profileText(ind: Indicator, p?: IndicatorProfile) {
   if (p) {
     lines.push("", "Điểm dễ hiểu sai:", ...p.nuances.map((n) => `- ${plain(n)}`));
     lines.push("", `Vì sao quan trọng: ${plain(p.whyMatters)}`, `Khi nào dễ đọc sai: ${plain(p.whenMisleading)}`);
-    lines.push("", "Câu hỏi nên đặt ra:", ...[...p.questions.basic, ...p.questions.advanced].map((q) => `- ${q}`));
+    lines.push("", "Câu hỏi nên đặt ra:", ...[...p.questions.explore, ...p.questions.decide].map((q) => `- ${q}`));
   }
   return lines.join("\n");
 }

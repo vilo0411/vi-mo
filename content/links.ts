@@ -186,6 +186,11 @@ LINKS.push(
 /** Các quan hệ dùng trong mô phỏng và thử thách (không gồm quan hệ của thẻ khái niệm). */
 export const SIM_LINKS = LINKS.filter((l) => !l.concept);
 
+/** Câu đọc một quan hệ bằng lời thường. */
+export function effectLine(from: string, to: string, sign: 1 | -1) {
+  return `${from} càng cao thì ${to} càng ${sign > 0 ? "cao" : "thấp"}, các yếu tố khác không đổi.`;
+}
+
 export function linkKey(l: { from: string; to: string }) {
   return `${l.from}->${l.to}`;
 }

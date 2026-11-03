@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GROUPS, INDICATORS, INDICATOR_BY_ID, measureOf } from "@/content/indicators";
-import { LINKS, linkKey } from "@/content/links";
+import { effectLine, LINKS, linkKey } from "@/content/links";
 import { casesMentioning } from "@/content/cases";
 import { formatManual, formatValue, getSeries, latest, manualConcept, missingYears } from "@/lib/data";
 import SeriesChart from "@/components/SeriesChart";
@@ -122,7 +122,7 @@ async function IndicatorPageContent({ params }: { params: Promise<{ id: string }
 
       <section className="grid md:grid-cols-2 gap-6">
         <Relations title="Ảnh hưởng tới" links={outgoing} side="to" />
-        <Relations title="Bị ảnh hưởng bởi" links={incoming} side="from" />
+        <Relations title={`Cái gì tác động tới ${ind.name}`} links={incoming} side="from" />
       </section>
 
       <RelatedTerms id={id} limit={10} />
@@ -169,6 +169,7 @@ function Relations({ title, links, side }: { title: string; links: typeof LINKS;
                 <Link href={`/tu-dien/${other.id}`} className="font-medium hover:text-accent">
                   <span style={{ color: l.sign > 0 ? "var(--chart-2)" : "var(--chart-1)" }}>{l.sign > 0 ? "+" : "−"}</span> {other.name}
                 </Link>
+                <p className="mt-0.5 leading-relaxed">{effectLine(INDICATOR_BY_ID[l.from].name, INDICATOR_BY_ID[l.to].name, l.sign)}</p>
                 <p className="text-muted mt-0.5 leading-relaxed">{l.mechanism}</p>
               </li>
             );
