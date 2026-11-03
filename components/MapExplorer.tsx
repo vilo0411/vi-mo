@@ -3,23 +3,22 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { GROUPS, INDICATORS, INDICATOR_BY_ID } from "@/content/indicators";
+import { GROUPS, INDICATORS, INDICATOR_BY_ID, type Group } from "@/content/indicators";
 import { MAP_BY_ID } from "@/content/maps";
 import { LINKS, linkKey, type Link as CausalLink } from "@/content/links";
 import { branchesOf, exploreOrder, revealedFor } from "@/lib/explore";
-import { formatManual, formatValue, getSeries, latest, lowerFirst, manualConcept, YEAR_RANGE, zScore } from "@/lib/data";
+import { getSeries, lowerFirst, YEAR_RANGE, zScore } from "@/lib/data";
 import { findPaths } from "@/lib/paths";
 import { useProgress } from "@/lib/progress";
 import MacroGraph, { GraphLegend, latestState, type NodeState } from "./MacroGraph";
-import SeriesChart from "./SeriesChart";
-import ContributionChart from "./ContributionChart";
 import CardGuide from "./CardGuide";
+import MetricPanel, { CloseButton, SignChip } from "./MetricPanel";
 import RelatedTerms from "./RelatedTerms";
+import SeriesChart from "./SeriesChart";
 
 type Selection = { kind: "node"; id: string } | { kind: "link"; key: string } | null;
 
 const INTRO_KEY = "vi-mo:intro-dismissed";
-const GDP_PARTS = new Set(["gdp_growth", "consumption", "investment", "gov_spending", "net_exports"]);
 
 export default function MapExplorer({ mapId }: { mapId: string }) {
   const params = useSearchParams();
@@ -33,6 +32,7 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
   const [pathIdx, setPathIdx] = useState(0);
   const [explore, setExplore] = useState<Explore | null>(params.get("explore") ? startExplore("gdp_growth") : null);
   const [intro, setIntro] = useState(false);
+  const [role, setRole] = useState<Group | null>(null);
   const wide = useWide();
   const { markSeen } = useProgress();
 
@@ -94,12 +94,17 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
       const l = LINKS.find((x) => linkKey(x) === sel.key)!;
       return { highlightNodes: new Set([l.from, l.to]), highlightLinks: new Set([sel.key]), fitTo: undefined };
     }
+    if (role) {
+      const ids = visibleIds.filter((id) => INDICATOR_BY_ID[id].group === role);
+      const ls = LINKS.filter((l) => ids.includes(l.from) || ids.includes(l.to));
+      return { highlightNodes: new Set(ids), highlightLinks: new Set(ls.map(linkKey)), fitTo: undefined };
+    }
     if (focus.length) {
       const ls = LINKS.filter((l) => focus.includes(l.from) && focus.includes(l.to));
       return { highlightNodes: new Set(focus), highlightLinks: new Set(ls.map(linkKey)), fitTo: focus };
     }
     return { highlightNodes: null, highlightLinks: null, fitTo: undefined };
-  }, [sel, activePath, explore, focus]);
+  }, [sel, activePath, explore, focus, role, visibleIds]);
 
   const clearPath = () => {
     setPathFrom("");
@@ -119,7 +124,7 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
   ) : paths ? (
     <PathPanel paths={paths} idx={pathIdx} setIdx={setPathIdx} from={pathFrom} to={pathTo} onClose={clearPath} />
   ) : sel?.kind === "node" ? (
-    <NodePanel id={sel.id} onSelectLink={(key) => setSel({ kind: "link", key })} onClose={() => setSel(null)} />
+    <MetricPanel key={sel.id} id={sel.id} mapId={mapId} onSelect={(id) => setSel({ kind: "node", id })} onSelectLink={(key) => setSel({ kind: "link", key })} onClose={() => setSel(null)} />
   ) : sel?.kind === "link" ? (
     <LinkPanel link={LINKS.find((l) => linkKey(l) === sel.key)!} onSelectNode={(id) => setSel({ kind: "node", id })} onClose={() => setSel(null)} />
   ) : intro ? (
@@ -174,6 +179,30 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
         </button>
       </div>
 
+      {!explore && (
+        <div className="flex flex-wrap items-center gap-2 text-xs" aria-label="Làm nổi theo vai trò">
+          <span className="text-muted">Vai trò:</span>
+          {(Object.keys(GROUPS) as Group[]).map((g) => {
+            const n = visibleIds.filter((id) => INDICATOR_BY_ID[id].group === g).length;
+            if (n === 0) return null;
+            return (
+              <button
+                key={g}
+                type="button"
+                aria-pressed={role === g}
+                title={GROUPS[g].hint}
+                onClick={() => { setSel(null); setRole(role === g ? null : g); }}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${role === g ? "border-accent bg-accent-soft" : "border-line hover:border-accent"}`}
+              >
+                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: `var(--g-${g})` }} />
+                {GROUPS[g].name}
+                <span className="tabular-nums text-muted">{n}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div className="relative">
         <MacroGraph
           nodeState={nodeState}
@@ -200,7 +229,7 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
           </aside>
         )}
       </div>
-      <GraphLegend mode={yearMode ? "year" : "map"} />
+      <GraphLegend mode={yearMode ? "year" : "map"} groups={false} />
     </div>
   );
 }
@@ -216,14 +245,6 @@ function useWide() {
     return () => mq.removeEventListener("change", update);
   }, []);
   return wide;
-}
-
-function CloseButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} aria-label="Đóng" className="float-right -mt-1 -mr-1 w-7 h-7 rounded-md text-muted hover:text-text hover:bg-surface-2">
-      ×
-    </button>
-  );
 }
 
 function IndicatorSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -401,111 +422,6 @@ function BranchList({
         })}
       </ul>
     </div>
-  );
-}
-
-function NodePanel({ id, onSelectLink, onClose }: { id: string; onSelectLink: (k: string) => void; onClose: () => void }) {
-  const ind = INDICATOR_BY_ID[id];
-  const s = getSeries(ind.seriesId);
-  const last = latest(s);
-  const outgoing = LINKS.filter((l) => l.from === id);
-  const incoming = LINKS.filter((l) => l.to === id);
-  return (
-    <div className="space-y-4">
-      <div>
-        <CloseButton onClick={onClose} />
-        <div className="text-xs font-medium" style={{ color: `var(--g-${ind.group})` }}>{GROUPS[ind.group].name}</div>
-        <h2 className="text-lg font-semibold">{ind.name}</h2>
-        {last && (
-          <div className="text-sm text-muted">
-            Năm {last.year}: <span className="text-text font-medium">{formatValue(last.value, s?.unit)}</span>
-          </div>
-        )}
-      </div>
-      <div className="rounded-lg bg-accent-soft p-3 text-sm leading-relaxed">
-        <div className="text-xs font-medium text-accent mb-1">Nói đơn giản</div>
-        <p>{ind.plain}</p>
-        <p className="text-muted mt-1.5">Ví dụ: {ind.example}</p>
-      </div>
-      <CardGuide ind={ind} />
-      {ind.concept && <ConceptNote id={id} />}
-      <div>
-        <h3 className="text-sm font-medium mb-1">Định nghĩa đầy đủ</h3>
-        <p className="text-sm leading-relaxed">{ind.definition}</p>
-      </div>
-      <div>
-        <h3 className="text-sm font-medium mb-1">Đọc thế nào?</h3>
-        <p className="text-sm leading-relaxed">{ind.howToRead}</p>
-      </div>
-      <SeriesChart lines={[{ id: ind.seriesId, label: ind.name }]} height={170} from={1995} />
-      {ind.dataNote && <p className="text-xs text-muted">{ind.dataNote}</p>}
-      {GDP_PARTS.has(id) && (
-        <div>
-          <h3 className="text-sm font-medium mb-1">Mỗi phần góp bao nhiêu vào tăng trưởng GDP?</h3>
-          <p className="text-xs text-muted mb-2 leading-relaxed">Tỷ trọng × tốc độ tăng của từng phần. Cộng lại ra gần đúng tốc độ tăng GDP.</p>
-          <ContributionChart from={2012} height={220} showWorked={false} />
-          <Link href="/tu-dien/gdp_growth#dong-gop" className="text-xs text-accent">
-            Xem cách tính từng bước →
-          </Link>
-        </div>
-      )}
-      <RelatedTerms id={id} />
-      <LinkList title="Ảnh hưởng tới" links={outgoing} side="to" onSelectLink={onSelectLink} />
-      <LinkList title="Bị ảnh hưởng bởi" links={incoming} side="from" onSelectLink={onSelectLink} />
-      <Link href={`/tu-dien/${id}`} className="inline-block text-sm text-accent">
-        Xem trang đầy đủ trong từ điển →
-      </Link>
-    </div>
-  );
-}
-
-function ConceptNote({ id }: { id: string }) {
-  const m = manualConcept(id);
-  return (
-    <div className="text-xs rounded-lg border border-dashed border-line p-2.5 leading-relaxed space-y-1.5">
-      <p>
-        Đây là một <b className="font-medium">khái niệm</b>, không có chuỗi số liệu theo năm. Nó được đặt trên bản đồ để bạn thấy nó nối với những chỉ số nào.
-      </p>
-      {m && (
-        <p>
-          <b className="font-medium">Số công bố gần nhất:</b> {m.label} năm {m.year}: <b className="font-medium">{formatManual(m)}</b>. {m.detail}{" "}
-          <a href={m.source} target="_blank" rel="noreferrer" className="text-accent">
-            Nguồn ↗
-          </a>
-        </p>
-      )}
-    </div>
-  );
-}
-
-function LinkList({ title, links, side, onSelectLink }: { title: string; links: CausalLink[]; side: "from" | "to"; onSelectLink: (k: string) => void }) {
-  if (!links.length) return null;
-  return (
-    <div>
-      <h3 className="text-sm font-medium mb-1.5">{title}</h3>
-      <ul className="space-y-1">
-        {links.map((l) => (
-          <li key={linkKey(l)}>
-            <button type="button" onClick={() => onSelectLink(linkKey(l))} className="w-full text-left text-sm px-2 py-1.5 rounded-md hover:bg-surface-2 flex gap-2">
-              <SignChip sign={l.sign} />
-              <span>{INDICATOR_BY_ID[side === "to" ? l.to : l.from].name}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-export function SignChip({ sign }: { sign: 1 | -1 }) {
-  return (
-    <span
-      className="inline-flex items-center justify-center w-5 h-5 rounded text-xs font-semibold shrink-0"
-      style={{ background: "var(--surface-2)", color: sign > 0 ? "var(--chart-2)" : "var(--chart-1)" }}
-      title={sign > 0 ? "Cùng chiều" : "Ngược chiều"}
-    >
-      {sign > 0 ? "+" : "−"}
-    </span>
   );
 }
 

@@ -11,7 +11,7 @@ import { SIM_LINKS, linkKey } from "@/content/links";
 import { lowerFirst } from "@/lib/data";
 import { explainStep, level, PRESETS, simulate, type Preset, type StepEvent } from "@/lib/simulate";
 import MacroGraph, { GraphLegend, type NodeState } from "./MacroGraph";
-import { SignChip } from "./MapExplorer";
+import { SignChip } from "./MetricPanel";
 
 const PERIODS = 12;
 // Mỗi kỳ dừng lại đủ lâu để kịp đọc thẻ nào vừa đổi.

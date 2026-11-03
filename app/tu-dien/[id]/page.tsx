@@ -8,6 +8,8 @@ import { formatManual, formatValue, getSeries, latest, manualConcept, missingYea
 import SeriesChart from "@/components/SeriesChart";
 import ContributionChart from "@/components/ContributionChart";
 import RelatedTerms from "@/components/RelatedTerms";
+import { AnalysisSection, CalculationSection, WhySection } from "@/components/ProfileSections";
+import { INDICATOR_PROFILES } from "@/content/indicatorProfiles";
 
 const GDP_PARTS = new Set(["gdp_growth", "consumption", "investment", "gov_spending", "net_exports"]);
 
@@ -39,6 +41,7 @@ async function IndicatorPageContent({ params }: { params: Promise<{ id: string }
   const incoming = LINKS.filter((l) => l.to === id);
   const cases = casesMentioning(id);
   const manual = ind.concept ? manualConcept(id) : undefined;
+  const profile = INDICATOR_PROFILES[id];
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -87,6 +90,23 @@ async function IndicatorPageContent({ params }: { params: Promise<{ id: string }
         <h2 className="text-lg font-semibold mb-2">Đọc thế nào?</h2>
         <p className="leading-relaxed">{ind.howToRead}</p>
       </section>
+
+      {profile && (
+        <section className="space-y-6">
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Cách tính và điểm dễ hiểu sai</h2>
+            <CalculationSection profile={profile} />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Vì sao nên quan tâm</h2>
+            <WhySection profile={profile} />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Phân tích sâu hơn</h2>
+            <AnalysisSection profile={profile} />
+          </div>
+        </section>
+      )}
 
       {GDP_PARTS.has(ind.id) && (
         <section id="dong-gop" className="scroll-mt-20">

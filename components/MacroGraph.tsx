@@ -492,12 +492,12 @@ export default function MacroGraph({
   );
 }
 
-export function GraphLegend({ mode }: { mode: "map" | "year" | "sim" }) {
+export function GraphLegend({ mode, groups = true }: { mode: "map" | "year" | "sim"; groups?: boolean }) {
   return (
     <div className="flex flex-col md:flex-row gap-3 md:items-center text-xs text-muted">
       {mode !== "sim" && <SampleCard mode={mode} />}
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 items-center">
-        {Object.entries(GROUPS).map(([g, v]) => (
+        {groups && Object.entries(GROUPS).map(([g, v]) => (
           <span key={g} className="inline-flex items-center gap-1.5" title={v.hint}>
             <span className="w-2.5 h-2.5 rounded-sm" style={{ background: `var(--g-${g})` }} />
             {v.name}

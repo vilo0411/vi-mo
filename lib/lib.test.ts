@@ -14,6 +14,8 @@ import { TERMS } from "@/content/glossary";
 import { firstMapWith, MAPS, MAP_BY_ID } from "@/content/maps";
 import { FEATURED_KEYS, LIBRARY_CATEGORIES, LIBRARY_ITEMS } from "@/content/library";
 import { FEYNMAN } from "@/content/feynman";
+import { INDICATOR_PROFILES } from "@/content/indicatorProfiles";
+import { refsIn } from "@/components/RichText";
 import { contributionAt, contributions } from "./contributions";
 import { INDICATOR_BY_ID, measureOf } from "@/content/indicators";
 import { explainStep, level, PRESETS, simulate, simulateShocks } from "./simulate";
@@ -297,6 +299,15 @@ describe("bản đồ con và bài học", () => {
       if (it.type === "map") expect(MAP_BY_ID[it.href.replace("/ban-do/", "")], it.key).toBeDefined();
     }
     for (const k of FEATURED_KEYS) expect(LIBRARY_ITEMS.some((it) => it.key === k), k).toBe(true);
+  });
+
+  it("hồ sơ chỉ số trỏ tới chỉ số và thuật ngữ có thật", () => {
+    const known = new Set([...INDICATORS.map((i) => i.id), ...TERMS.map((t) => t.id)]);
+    for (const [id, p] of Object.entries(INDICATOR_PROFILES)) {
+      expect(INDICATOR_BY_ID[id], id).toBeDefined();
+      const texts = [...p.nuances, p.whyMatters, p.whenMisleading, p.worked.note, ...p.breakdowns.map((b) => b.reveals)];
+      for (const ref of texts.flatMap(refsIn)) expect(known.has(ref), `${id}/${ref}`).toBe(true);
+    }
   });
 
   it("mọi chỉ số đều mở được trên một bản đồ con", () => {
