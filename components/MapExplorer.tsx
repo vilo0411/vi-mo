@@ -10,6 +10,7 @@ import { branchesOf, exploreOrder, revealedFor } from "@/lib/explore";
 import { getSeries, lowerFirst, YEAR_RANGE, zScore } from "@/lib/data";
 import { findPaths } from "@/lib/paths";
 import { useProgress } from "@/lib/progress";
+import { fold } from "@/lib/text";
 import MacroGraph, { GraphLegend, latestState, type NodeState } from "./MacroGraph";
 import CardGuide from "./CardGuide";
 import MetricPanel, { CloseButton, SignChip } from "./MetricPanel";
@@ -33,6 +34,10 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
   const [explore, setExplore] = useState<Explore | null>(params.get("explore") ? startExplore("gdp_growth") : null);
   const [intro, setIntro] = useState(false);
   const [role, setRole] = useState<Group | null>(null);
+  // Bấm thẳng lên thẻ thì giữ nguyên khung nhìn; mở chỉ số từ chỗ khác thì lia tới thẻ đó.
+  const [fly, setFly] = useState(!!metric);
+  const [full, setFull] = useState(!MAP_BY_ID[mapId].core || focus.length > 0);
+  const [tour, setTour] = useState<number | null>(null);
   const wide = useWide();
   const { markSeen } = useProgress();
 
@@ -63,20 +68,22 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
   const visibleIds = useMemo(() => {
     if (explore) return revealedFor([explore.at]);
     // Đang tìm đường đi: hiện đủ các thẻ trên mọi chuỗi tìm được, kể cả thẻ ngoài bản đồ đang chọn.
-    const base = map.ids === "all" ? INDICATORS.map((i) => i.id) : map.ids;
+    const base = !full && map.core ? map.core : map.ids === "all" ? INDICATORS.map((i) => i.id) : map.ids;
     const extra = [...(paths ?? []).flatMap((p) => p.nodes), ...(sel?.kind === "node" ? [sel.id] : [])];
     return [...new Set([...base, ...extra])];
-  }, [explore, map, paths, sel]);
+  }, [explore, map, paths, sel, full]);
 
   const nodeState = useMemo(() => {
-    if (!yearMode) return undefined;
     const out: Record<string, NodeState> = {};
-    for (const ind of INDICATORS) {
-      const z = zScore(getSeries(ind.seriesId), year);
-      out[ind.id] = { ...latestState(ind, year), intensity: z === undefined ? 0 : z / 2 };
+    if (yearMode) {
+      for (const ind of INDICATORS) {
+        const z = zScore(getSeries(ind.seriesId), year);
+        out[ind.id] = { ...latestState(ind, year), intensity: z === undefined ? 0 : z / 2 };
+      }
     }
+    if (!explore) out[map.keyId] = { ...(out[map.keyId] ?? latestState(INDICATOR_BY_ID[map.keyId])), badge: { text: "Bắt đầu từ đây", tone: "you" } };
     return out;
-  }, [yearMode, year]);
+  }, [yearMode, year, map, explore]);
 
   const { highlightNodes, highlightLinks, fitTo } = useMemo(() => {
     if (explore) {
@@ -88,7 +95,8 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
     }
     if (sel?.kind === "node") {
       const ls = LINKS.filter((l) => l.from === sel.id || l.to === sel.id);
-      return { highlightNodes: new Set([sel.id, ...ls.flatMap((l) => [l.from, l.to])]), highlightLinks: new Set(ls.map(linkKey)), fitTo: undefined };
+      const near = new Set([sel.id, ...ls.flatMap((l) => [l.from, l.to])]);
+      return { highlightNodes: near, highlightLinks: new Set(ls.map(linkKey)), fitTo: fly ? [...near] : undefined };
     }
     if (sel?.kind === "link") {
       const l = LINKS.find((x) => linkKey(x) === sel.key)!;
@@ -104,12 +112,21 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
       return { highlightNodes: new Set(focus), highlightLinks: new Set(ls.map(linkKey)), fitTo: focus };
     }
     return { highlightNodes: null, highlightLinks: null, fitTo: undefined };
-  }, [sel, activePath, explore, focus, role, visibleIds]);
+  }, [sel, activePath, explore, focus, role, visibleIds, fly]);
 
   const clearPath = () => {
     setPathFrom("");
     setPathTo("");
     setPathIdx(0);
+  };
+
+  const openMetric = (id: string) => {
+    clearPath();
+    setExplore(null);
+    setRole(null);
+    setTour(null);
+    setFly(true);
+    setSel({ kind: "node", id });
   };
 
   const startTour = (root = "gdp_growth") => {
@@ -119,16 +136,18 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
     dismissIntro();
   };
 
-  const panel = explore ? (
+  const panel = tour !== null ? (
+    <MapTour step={tour} onStep={setTour} onClose={() => { setTour(null); dismissIntro(); }} />
+  ) : explore ? (
     <ExplorePanel state={explore} onChange={setExplore} onRestart={startTour} onClose={() => setExplore(null)} />
   ) : paths ? (
     <PathPanel paths={paths} idx={pathIdx} setIdx={setPathIdx} from={pathFrom} to={pathTo} onClose={clearPath} />
   ) : sel?.kind === "node" ? (
-    <MetricPanel key={sel.id} id={sel.id} mapId={mapId} onSelect={(id) => setSel({ kind: "node", id })} onSelectLink={(key) => setSel({ kind: "link", key })} onClose={() => setSel(null)} />
+    <MetricPanel key={sel.id} id={sel.id} mapId={mapId} onSelect={openMetric} onSelectLink={(key) => setSel({ kind: "link", key })} onClose={() => setSel(null)} />
   ) : sel?.kind === "link" ? (
     <LinkPanel link={LINKS.find((l) => linkKey(l) === sel.key)!} onSelectNode={(id) => setSel({ kind: "node", id })} onClose={() => setSel(null)} />
   ) : intro ? (
-    <IntroPanel onTour={startTour} onClose={dismissIntro} />
+    <IntroPanel onGuide={() => setTour(0)} onTour={startTour} onClose={dismissIntro} />
   ) : null;
 
   return (
@@ -177,10 +196,27 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
         <button type="button" className="text-accent text-xs ml-1" onClick={() => { setExplore(null); setPathFrom("fed_rate"); setPathTo("cpi"); setPathIdx(0); }}>
           Ví dụ: Fed tới lạm phát Việt Nam
         </button>
+        <MapSearch onPick={openMetric} />
       </div>
 
       {!explore && (
-        <div className="flex flex-wrap items-center gap-2 text-xs" aria-label="Làm nổi theo vai trò">
+        <div className="flex flex-wrap items-center gap-2 text-xs" aria-label="Cách xem bản đồ">
+          {map.core && (
+            <div className="inline-flex rounded-full border border-line p-0.5" role="group" aria-label="Mức chi tiết">
+              {[{ on: false, label: "Cốt lõi" }, { on: true, label: "Đầy đủ" }].map((v) => (
+                <button
+                  key={v.label}
+                  type="button"
+                  aria-pressed={full === v.on}
+                  title={v.on ? "Hiện mọi thẻ của bản đồ" : "Chỉ hiện những thẻ quan trọng nhất"}
+                  onClick={() => { setRole(null); setFull(v.on); }}
+                  className={`px-2.5 py-0.5 rounded-full ${full === v.on ? "bg-accent-soft text-accent font-medium" : "text-muted hover:text-text"}`}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          )}
           <span className="text-muted">Vai trò:</span>
           {(Object.keys(GROUPS) as Group[]).map((g) => {
             const n = visibleIds.filter((id) => INDICATOR_BY_ID[id].group === g).length;
@@ -200,6 +236,9 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
               </button>
             );
           })}
+          <button type="button" onClick={() => setTour(0)} className="ml-auto px-2.5 py-1 rounded-full border border-line hover:border-accent" aria-label="Cách đọc bản đồ">
+            ? Cách đọc bản đồ
+          </button>
         </div>
       )}
 
@@ -213,6 +252,7 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
           selectedLink={sel?.kind === "link" ? sel.key : null}
           onNodeClick={(id) => {
             clearPath();
+            setFly(false);
             // Đang khám phá thì bấm vào thẻ là đi tới thẻ đó, không thoát chế độ khám phá.
             if (explore) setExplore(visit(explore, id));
             else setSel({ kind: "node", id });
@@ -222,6 +262,7 @@ export default function MapExplorer({ mapId }: { mapId: string }) {
           fitTo={fitTo}
           reserveRight={panel && wide ? 400 : 0}
           height="max(600px, calc(100vh - 250px))"
+          minimap={visibleIds.length > 15 && !panel}
         />
         {panel && (
           <aside className="mt-3 xl:mt-0 xl:absolute xl:right-3 xl:top-3 xl:bottom-3 xl:w-[390px] overflow-y-auto bg-surface border border-line rounded-xl p-5 shadow-lg z-10">
@@ -264,14 +305,80 @@ function IndicatorSelect({ value, onChange }: { value: string; onChange: (v: str
   );
 }
 
-function IntroPanel({ onTour, onClose }: { onTour: () => void; onClose: () => void }) {
+const TOUR_STEPS = [
+  { title: "Bản đồ này đọc thế nào?", body: "Mỗi thẻ là một con số của nền kinh tế Việt Nam, ví dụ giá cả tăng bao nhiêu hay có bao nhiêu người thất nghiệp. Mũi tên cho biết con số này kéo theo con số kia. Sáu bước ngắn dưới đây giúp bạn đọc được bản đồ." },
+  { title: "Bắt đầu từ thẻ có nhãn", body: "Thẻ gắn nhãn \"Bắt đầu từ đây\" là con số quan trọng nhất của bản đồ. Hãy đọc nó trước, rồi lần theo các mũi tên đi vào để xem cái gì tác động tới nó." },
+  { title: "Màu nhãn cho biết vai trò", body: "Màu ở góc thẻ cho biết con số đó đóng vai gì: công cụ Nhà nước chủ động điều chỉnh, cú sốc từ bên ngoài, hay kết quả mà ai cũng quan tâm. Bấm một vai trò ở phía trên để làm nổi các thẻ cùng loại." },
+  { title: "Mũi tên có dấu + và −", body: "Dấu + nghĩa là cái này tăng thì cái kia tăng theo. Dấu − nghĩa là cái này tăng thì cái kia giảm. Nét đứt là quan hệ của một khái niệm, không đo được bằng số. Bấm vào mũi tên để đọc vì sao hai con số liên quan với nhau." },
+  { title: "Cốt lõi và Đầy đủ", body: "Cốt lõi chỉ giữ những thẻ quan trọng nhất, rất hợp khi mới học. Khi đã quen, chuyển sang Đầy đủ để thấy mọi thẻ của bản đồ." },
+  { title: "Xem kỹ một con số", body: "Bấm vào thẻ để đọc định nghĩa bằng lời thường, cách tính và ví dụ. Muốn tìm nhanh một con số thì dùng ô tìm kiếm phía trên. Nút \"Cách đọc bản đồ\" mở lại các bước này bất cứ lúc nào." },
+];
+
+function MapTour({ step, onStep, onClose }: { step: number; onStep: (n: number) => void; onClose: () => void }) {
+  const s = TOUR_STEPS[step];
+  const last = step === TOUR_STEPS.length - 1;
+  return (
+    <div className="space-y-3 text-sm leading-relaxed">
+      <CloseButton onClick={onClose} />
+      <p className="text-xs text-muted">Bước {step + 1} trên {TOUR_STEPS.length}</p>
+      <h2 className="text-lg font-semibold">{s.title}</h2>
+      <p>{s.body}</p>
+      <div className="flex items-center justify-between pt-1">
+        <button type="button" onClick={() => onStep(step - 1)} disabled={step === 0} className="text-muted hover:text-text disabled:opacity-40">Quay lại</button>
+        <button type="button" onClick={() => (last ? onClose() : onStep(step + 1))} className="px-3 py-1.5 rounded-lg bg-accent text-white">{last ? "Xong" : "Tiếp"}</button>
+      </div>
+    </div>
+  );
+}
+
+function MapSearch({ onPick }: { onPick: (id: string) => void }) {
+  const [q, setQ] = useState("");
+  const needle = fold(q.trim());
+  const hits = needle ? INDICATORS.filter((i) => fold(`${i.name} ${i.short}`).includes(needle)).slice(0, 6) : [];
+  const pick = (id: string) => {
+    setQ("");
+    onPick(id);
+  };
+  return (
+    <div className="relative w-full sm:w-52 sm:ml-auto">
+      <input
+        type="search"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && hits[0]) pick(hits[0].id);
+          if (e.key === "Escape") setQ("");
+        }}
+        placeholder="Tìm một con số…"
+        aria-label="Tìm chỉ số trên bản đồ"
+        className="w-full rounded-lg border border-line bg-surface px-2.5 py-1 text-sm"
+      />
+      {needle && (
+        <ul className="absolute right-0 left-0 top-full mt-1 z-20 rounded-lg border border-line bg-surface shadow-lg overflow-hidden">
+          {hits.length === 0 && <li className="px-2.5 py-1.5 text-muted">Không tìm thấy</li>}
+          {hits.map((i) => (
+            <li key={i.id}>
+              <button type="button" onClick={() => pick(i.id)} className="w-full text-left px-2.5 py-1.5 hover:bg-surface-2">{i.name}</button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function IntroPanel({ onGuide, onTour, onClose }: { onGuide: () => void; onTour: () => void; onClose: () => void }) {
   return (
     <div className="space-y-3 text-sm leading-relaxed">
       <CloseButton onClick={onClose} />
       <h2 className="text-lg font-semibold">Mới bắt đầu?</h2>
-      <p>Đừng cố đọc hết bản đồ cùng lúc. Có hai cách bắt đầu:</p>
-      <button type="button" onClick={() => onTour()} className="w-full text-left rounded-lg border border-accent bg-accent-soft p-3">
-        <div className="font-medium text-accent">Khám phá từng nhánh, bắt đầu từ GDP</div>
+      <p>Đừng cố đọc hết bản đồ cùng lúc. Bạn có thể chọn một trong các cách sau:</p>
+      <button type="button" onClick={onGuide} className="w-full text-left rounded-lg border border-accent bg-accent-soft p-3">
+        <div className="font-medium text-accent">Xem cách đọc bản đồ</div>
+        <div className="text-muted text-xs mt-0.5">Sáu bước ngắn, mất khoảng một phút.</div>
+      </button>
+      <button type="button" onClick={() => onTour()} className="w-full text-left rounded-lg border border-line p-3 hover:border-accent">
+        <div className="font-medium">Khám phá từng nhánh, bắt đầu từ GDP</div>
         <div className="text-muted text-xs mt-0.5">Bản đồ chỉ hiện GDP và các nhánh của nó, rồi mở dần từng nhánh một.</div>
       </button>
       <Link href="/lo-trinh" className="block rounded-lg border border-line p-3 hover:border-accent">

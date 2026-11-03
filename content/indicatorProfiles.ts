@@ -22,10 +22,10 @@ export type IndicatorProfile = {
 /** Sáu câu nên hỏi trước với bất kỳ con số vĩ mô nào. */
 export const BASIC_QUESTIONS = [
   "So với kỳ trước và cùng kỳ năm trước, con số đổi bao nhiêu?",
-  "Mức này có nằm trong biên độ dao động thường thấy của chính chỉ số này không?",
+  "Mức này cao hay thấp so với những năm trước?",
   "So với mục tiêu hoặc kế hoạch Nhà nước đặt ra thì cao hay thấp?",
   "Thay đổi bắt đầu từ khi nào, đột ngột hay từ từ?",
-  "Đây là số sơ bộ hay số đã chốt, và cách tính có gì thay đổi không?",
+  "Đây là số mới ước tính hay số đã chốt?",
   "Nguyên nhân chính đến từ trong nước hay từ bên ngoài?",
 ];
 
@@ -35,7 +35,7 @@ export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
     nuances: [
       "**Có nhiều cách so sánh.** Con số ở đây là CPI bình quân cả năm so với bình quân năm trước. Báo chí còn hay đưa CPI tháng này so với cùng tháng năm trước, hoặc tháng 12 so với tháng 12. Ba con số có thể khác nhau, nên trước khi so phải xem đang so với gì.",
       "**Lạm phát giảm không có nghĩa là giá giảm.** Từ 3,62% năm 2024 xuống 3,31% năm 2025, giá vẫn tăng, chỉ là tăng chậm hơn. Giá chỉ giảm khi lạm phát xuống dưới 0.",
-      "**CPI đo một rổ hàng trung bình, không đo rổ hàng của riêng bạn.** Mỗi nhóm hàng có một quyền số. Gia đình có con đi học hay có người nằm viện có thể cảm thấy giá tăng nhanh hơn nhiều so với con số công bố.",
+      "**CPI đo một rổ hàng trung bình, không đo rổ hàng của riêng bạn.** Món nào gia đình trung bình chi nhiều thì được tính nặng hơn. Gia đình có con đi học hay có người nằm viện có thể cảm thấy giá tăng nhanh hơn nhiều so với con số công bố.",
       "**Giá do Nhà nước điều chỉnh cũng nằm trong rổ.** Điện, y tế, học phí có thể đẩy CPI lên trong một tháng dù nhu cầu không nóng. Vì vậy cần xem thêm [[lam-phat-co-ban|lạm phát cơ bản]].",
     ],
     worked: {
@@ -61,7 +61,7 @@ export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
     ],
     questions: {
       explore: ["Nhóm hàng nào đóng góp nhiều nhất vào đợt tăng này?", "Lạm phát cơ bản đi cùng hướng hay ngược hướng với CPI?", "Tỷ giá và giá dầu có giải thích được phần lớn đợt tăng không?"],
-      decide: ["Đợt tăng này do cầu nóng lên, nên cần hãm lại, hay do chi phí đầu vào, nên tăng lãi suất cũng ít tác dụng?"],
+      decide: ["Với mức lạm phát này, tiền lương và tiền tiết kiệm của mình có giữ được sức mua không?"],
     },
   },
 
@@ -69,7 +69,7 @@ export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
     alsoCalled: ["Lãi suất tái cấp vốn", "Refinancing rate"],
     nuances: [
       "**Đây là giá ngân hàng trả cho Ngân hàng Nhà nước, không phải lãi bạn trả khi vay.** [[lending_rate|Lãi suất cho vay]] còn cộng thêm chi phí huy động, rủi ro và lợi nhuận của ngân hàng.",
-      "**Có nhiều lãi suất mang tên điều hành.** Ngoài tái cấp vốn còn có tái chiết khấu và lãi suất [[omo|nghiệp vụ thị trường mở]]. Trang này chỉ theo dõi tái cấp vốn, lấy giá trị cuối năm.",
+      "**Con số ở đây là một trong vài mức lãi của Ngân hàng Nhà nước.** Tên đầy đủ của nó là lãi suất tái cấp vốn, tức mức lãi khi cho ngân hàng vay. Trang này lấy giá trị cuối mỗi năm.",
       "**Không có lịch họp cố định.** Ngân hàng Nhà nước ra quyết định khi cần, nên con số đứng yên nhiều năm rồi đổi đột ngột.",
       "**Dữ liệu trong app còn thiếu 2012–2016** vì chưa đối chiếu đủ các lần điều chỉnh, nên đừng đọc đoạn đó trên biểu đồ như thể lãi suất không đổi.",
     ],
@@ -95,7 +95,7 @@ export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
     ],
     questions: {
       explore: ["Lãi suất cho vay đã phản ứng chưa, sau bao lâu?", "Khoảng cách với lãi suất Fed đang tạo sức ép lên tỷ giá không?", "Room tín dụng và thị trường mở đang đi cùng hướng hay ngược hướng với lãi suất?"],
-      decide: ["Với lạm phát, tỷ giá và tăng trưởng hiện tại, Ngân hàng Nhà nước nên ưu tiên giữ giá trị đồng tiền hay đỡ tăng trưởng?"],
+      decide: ["Nếu lãi suất đang đổi hướng, khoản vay và tiền gửi của gia đình mình sẽ chịu ảnh hưởng ra sao?"],
     },
   },
 
@@ -117,7 +117,7 @@ export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
       note: "Không ai trong chuỗi này sai về cá nhân. Mỗi người chỉ tự bảo vệ mình, nhưng cộng lại thì niềm tin biến thành lạm phát thật.",
     },
     whyMatters:
-      "**Khi kỳ vọng đã mất neo, hãm lạm phát đắt hơn rất nhiều.** Nếu mọi người tin Ngân hàng Nhà nước sẽ giữ được giá, một cú sốc giá dầu chỉ qua đi. Nếu không tin, cú sốc đó ngấm vào lương và giá bán, và [[policy_rate|lãi suất]] phải tăng cao hơn để kéo niềm tin trở lại.",
+      "**Khi mọi người không còn tin giá sẽ ổn định, hãm lạm phát khó hơn rất nhiều.** Nếu mọi người tin Ngân hàng Nhà nước sẽ giữ được giá, một cú sốc giá dầu chỉ qua đi. Nếu không tin, cú sốc đó ngấm vào lương và giá bán, và [[policy_rate|lãi suất]] phải tăng cao hơn để kéo niềm tin trở lại.",
     whenMisleading:
       "**Tin đồn trên mạng không phải là kỳ vọng của cả nền kinh tế.** Một đợt xếp hàng mua vàng có thể chỉ phản ánh một nhóm người. Cũng đừng nghĩ người dân lúc nào cũng phản ứng theo số công bố: họ thường đánh giá lạm phát qua vài món mua hằng ngày như xăng và thực phẩm.",
     breakdowns: [
@@ -128,7 +128,7 @@ export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
     ],
     questions: {
       explore: ["Người dân và doanh nghiệp có đang tích trữ vàng, đô la hoặc tăng giá trước khi chi phí tăng không?", "Một cú sốc giá gần đây có ngấm vào lương không, hay qua đi nhanh?"],
-      decide: ["Lời nói và hành động của Ngân hàng Nhà nước có đủ nhất quán để giữ niềm tin, hay cần một động thái mạnh hơn?"],
+      decide: ["Mình có đang tích trữ hàng hay đổi tiền sang vàng chỉ vì sợ giá tăng không, và điều đó có thật sự cần không?"],
     },
   },
 };

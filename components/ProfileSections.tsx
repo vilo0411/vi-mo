@@ -76,7 +76,7 @@ export function AnalysisSection({ profile, onMetric }: Props) {
       </div>
       <QuestionList title="Câu hỏi cơ bản" hint="Nên hỏi với mọi con số vĩ mô" items={BASIC_QUESTIONS} />
       <QuestionList title="Câu hỏi khám phá" hint="Tìm nguyên nhân" items={questions.explore} />
-      <QuestionList title="Câu hỏi quyết định" hint="Nếu bạn là người ra chính sách" items={questions.decide} />
+      <QuestionList title="Câu hỏi cho chính bạn" hint="Con số này liên quan gì tới quyết định của bạn" items={questions.decide} />
     </div>
   );
 }

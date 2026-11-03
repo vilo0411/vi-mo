@@ -11,6 +11,7 @@ import {
   getViewportForBounds,
   Handle,
   MarkerType,
+  MiniMap,
   NodeToolbar,
   Panel,
   Position,
@@ -307,6 +308,7 @@ export default function MacroGraph({
   height = 640,
   showSigns = true,
   draggable = true,
+  minimap = false,
   children,
 }: {
   nodeState?: Record<string, NodeState>;
@@ -327,6 +329,8 @@ export default function MacroGraph({
   showSigns?: boolean;
   /** Tắt kéo thả khi bố cục tự thay đổi liên tục (ví dụ trong thử thách) */
   draggable?: boolean;
+  /** Hiện bản đồ thu nhỏ ở góc, dùng khi có nhiều thẻ */
+  minimap?: boolean;
   children?: React.ReactNode;
 }) {
   const subset = !!visibleIds;
@@ -429,7 +433,7 @@ export default function MacroGraph({
       const on = highlightLinks ? highlightLinks.has(key) : false;
       const dim = !!highlightLinks && !on;
       const active = on || selectedLink === key;
-      const color = active ? "var(--accent)" : "var(--muted)";
+      const color = l.sign > 0 ? "var(--chart-2)" : "var(--chart-1)";
       const routed = !overrides[l.from] && !overrides[l.to];
       return {
         id: key,
@@ -445,7 +449,7 @@ export default function MacroGraph({
         style: {
           stroke: color,
           strokeWidth: active ? 2.5 : 1.25,
-          strokeDasharray: l.sign < 0 ? "6 4" : undefined,
+          strokeDasharray: l.concept ? "6 4" : undefined,
           opacity: dim ? 0.05 : active ? 1 : 0.6,
         },
         markerEnd: { type: MarkerType.ArrowClosed, color, width: 14, height: 14 },
@@ -478,6 +482,7 @@ export default function MacroGraph({
       >
         <Background color="var(--grid)" gap={20} size={1.2} />
         <Controls showInteractive={false} />
+        {minimap && <MiniMap pannable zoomable position="bottom-right" nodeColor={(n) => `var(--g-${INDICATOR_BY_ID[n.id].group})`} maskColor="color-mix(in srgb, var(--bg) 70%, transparent)" style={{ background: "var(--surface)", width: 150, height: 100 }} />}
         <AutoFit ids={fitIds} focus={!!fitTo?.length} reserveRight={reserveRight} />
         {Object.keys(overrides).length > 0 && (
           <Panel position="top-left">
@@ -504,12 +509,16 @@ export function GraphLegend({ mode, groups = true }: { mode: "map" | "year" | "s
           </span>
         ))}
         <span className="inline-flex items-center gap-1.5">
-          <svg width="26" height="8" aria-hidden><line x1="0" y1="4" x2="26" y2="4" stroke="currentColor" strokeWidth="1.5" /></svg>
-          <b className="font-semibold">+</b> cùng chiều
+          <svg width="26" height="8" aria-hidden><line x1="0" y1="4" x2="26" y2="4" stroke="var(--chart-2)" strokeWidth="1.5" /></svg>
+          <b className="font-semibold">+</b> cùng chiều: cái này tăng thì cái kia tăng
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <svg width="26" height="8" aria-hidden><line x1="0" y1="4" x2="26" y2="4" stroke="var(--chart-1)" strokeWidth="1.5" /></svg>
+          <b className="font-semibold">−</b> ngược chiều: cái này tăng thì cái kia giảm
         </span>
         <span className="inline-flex items-center gap-1.5">
           <svg width="26" height="8" aria-hidden><line x1="0" y1="4" x2="26" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="6 4" /></svg>
-          <b className="font-semibold">−</b> ngược chiều
+          Nét đứt: quan hệ của khái niệm, không đo bằng số
         </span>
         {mode === "year" && (
           <span className="inline-flex items-center gap-1.5">

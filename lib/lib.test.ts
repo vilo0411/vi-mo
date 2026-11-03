@@ -314,6 +314,22 @@ describe("bản đồ con và bài học", () => {
     }
   });
 
+  it("phần cốt lõi của mỗi bản đồ nằm trong bản đồ, nối liền nhau và chứa thẻ trọng tâm", () => {
+    for (const m of MAPS) {
+      if (m.ids === "all") {
+        expect(INDICATOR_BY_ID[m.keyId], m.id).toBeDefined();
+        continue;
+      }
+      const core = m.core ?? m.ids;
+      expect(core.includes(m.keyId), m.id).toBe(true);
+      const set = new Set(core);
+      for (const id of core) {
+        expect(m.ids.includes(id), `${m.id}/${id}`).toBe(true);
+        expect(LINKS.some((l) => (l.from === id && set.has(l.to)) || (l.to === id && set.has(l.from))), `${m.id}/${id}`).toBe(true);
+      }
+    }
+  });
+
   it("mọi chỉ số đều mở được trên một bản đồ con", () => {
     for (const i of INDICATORS) expect(firstMapWith(i.id), i.id).not.toBe("toan-bo");
   });
