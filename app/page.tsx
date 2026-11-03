@@ -1,10 +1,14 @@
 import { Suspense } from "react";
-import MapExplorer from "@/components/MapExplorer";
+import LegacyMapRedirect from "@/components/LegacyMapRedirect";
+import Library from "@/components/Library";
 
 export default function Home() {
   return (
-    <Suspense>
-      <MapExplorer />
-    </Suspense>
+    <>
+      <Suspense>
+        <LegacyMapRedirect />
+      </Suspense>
+      <Library />
+    </>
   );
 }

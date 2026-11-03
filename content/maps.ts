@@ -1,38 +1,71 @@
 /** Các bản đồ con: mỗi bản đồ chỉ hiện một nhóm chỉ số để dễ nhìn. Bản đồ đầu tiên là mặc định. */
-export type MapView = { id: string; name: string; hint: string; ids: string[] | "all" };
+export type LibraryCategory = "tong-the" | "tang-truong" | "tien-te" | "doi-ngoai";
+
+export type MapView = { id: string; name: string; hint: string; category: LibraryCategory; ids: string[] | "all" };
 
 export const MAPS: MapView[] = [
   {
     id: "chinh",
     name: "Bản đồ chính",
-    hint: "12 chỉ số quan trọng nhất, nên bắt đầu từ đây.",
+    hint: "13 chỉ số quan trọng nhất, nên bắt đầu từ đây.",
+    category: "tong-the",
     ids: ["fed_rate", "oil_price", "policy_rate", "gov_spending", "lending_rate", "credit", "fx_rate", "consumption", "investment", "net_exports", "gdp_growth", "cpi", "unemployment"],
   },
   {
     id: "tong-cau",
     name: "GDP và tổng cầu",
     hint: "Ai đang tiêu tiền: C + I + G + (X − M) và những gì kéo chúng lên xuống.",
+    category: "tang-truong",
     ids: ["consumption", "investment", "gov_spending", "net_exports", "gdp_growth", "unemployment", "cpi", "credit", "confidence", "tax", "public_investment", "remittances", "fdi"],
   },
   {
     id: "tien-te",
     name: "Tiền tệ và ngân hàng",
     hint: "Ngân hàng Nhà nước kéo cần gạt lãi suất và lượng tiền như thế nào.",
+    category: "tien-te",
     ids: ["policy_rate", "omo", "credit_quota", "interbank", "lending_rate", "real_rate", "credit", "m2", "expectations", "cpi", "investment", "consumption", "fx_rate"],
   },
   {
     id: "tai-khoa",
     name: "Ngân sách và nợ công",
     hint: "Chính phủ thu, chi và vay nợ.",
-    ids: ["gov_spending", "tax", "public_investment", "fiscal_balance", "public_debt", "investment", "consumption", "gdp_growth", "lending_rate"],
+    category: "tang-truong",
+    ids: ["gov_spending", "tax", "public_investment", "fiscal_balance", "public_debt", "investment", "consumption", "gdp_growth"],
   },
   {
     id: "doi-ngoai",
     name: "Tỷ giá và thế giới",
     hint: "Fed, giá dầu, dòng vốn ngoại, xuất nhập khẩu và dự trữ ngoại hối.",
+    category: "doi-ngoai",
     ids: ["fed_rate", "oil_price", "fdi", "fpi", "remittances", "fx_rate", "interbank", "policy_rate", "net_exports", "current_account", "reserves", "cpi", "investment"],
   },
-  { id: "toan-bo", name: "Toàn bộ", hint: "Tất cả chỉ số và khái niệm. Nhiều thẻ, nên dùng khi đã quen.", ids: "all" },
+  {
+    id: "lam-phat",
+    name: "Lạm phát đến từ đâu",
+    hint: "Giá dầu, tỷ giá, tiền trong nền kinh tế và kỳ vọng cùng đẩy giá cả như thế nào.",
+    category: "tien-te",
+    ids: ["oil_price", "fx_rate", "m2", "credit", "consumption", "expectations", "cpi", "policy_rate", "real_rate", "lending_rate"],
+  },
+  {
+    id: "tin-dung",
+    name: "Tín dụng và doanh nghiệp",
+    hint: "Từ quyết định của Ngân hàng Nhà nước tới khoản vay của doanh nghiệp và hộ gia đình.",
+    category: "tien-te",
+    ids: ["policy_rate", "omo", "credit_quota", "interbank", "lending_rate", "credit", "investment", "consumption", "gdp_growth", "confidence"],
+  },
+  {
+    id: "von-ngoai",
+    name: "Dòng vốn ngoại",
+    hint: "Vốn FDI, vốn gián tiếp và kiều hối đi vào, đi ra và tác động tới tỷ giá.",
+    category: "doi-ngoai",
+    ids: ["fed_rate", "fdi", "fpi", "remittances", "fx_rate", "reserves", "current_account", "net_exports", "interbank", "policy_rate"],
+  },
+  { id: "toan-bo", name: "Toàn bộ", hint: "Tất cả chỉ số và khái niệm. Nhiều thẻ, nên dùng khi đã quen.", category: "tong-the", ids: "all" },
 ];
 
 export const MAP_BY_ID = Object.fromEntries(MAPS.map((m) => [m.id, m])) as Record<string, MapView>;
+
+/** Bản đồ con đầu tiên có chỉ số này; bản đồ Toàn bộ chỉ là phương án cuối. */
+export function firstMapWith(id: string) {
+  return MAPS.find((m) => m.ids !== "all" && m.ids.includes(id))?.id ?? "toan-bo";
+}

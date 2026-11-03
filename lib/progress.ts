@@ -25,6 +25,8 @@ function read(): Progress {
       daily: p.daily ?? {},
       quiz: p.quiz ?? {},
       sandboxBest: typeof p.sandboxBest === "number" ? p.sandboxBest : 0,
+      seenItems: p.seenItems ?? {},
+      savedItems: p.savedItems ?? {},
     };
   } catch {
     return EMPTY_PROGRESS;
@@ -72,6 +74,19 @@ export function useProgress() {
     write({ ...p, lessons: { ...p.lessons, [slug]: true } });
   }, []);
 
+  /** Đánh dấu đã mở một mục trong thư viện. Không tính XP. */
+  const markSeen = useCallback((key: string) => {
+    const p = read();
+    if (!p.seenItems[key]) write({ ...p, seenItems: { ...p.seenItems, [key]: true } });
+  }, []);
+
+  /** Lưu hoặc bỏ lưu một mục trong thư viện. */
+  const toggleSaved = useCallback((key: string) => {
+    const p = read();
+    const { [key]: was, ...rest } = p.savedItems;
+    write({ ...p, savedItems: was ? rest : { ...rest, [key]: true } });
+  }, []);
+
   /** Ghi kết quả một nhiệm kỳ: sao và điểm tốt nhất, rồi trả về phần thưởng của lượt này. */
   const recordRun = useCallback((run: RunInfo): Reward => {
     const p = read();
@@ -109,5 +124,5 @@ export function useProgress() {
     return commit(p, { ...p, sandboxBest: Math.max(p.sandboxBest, years) }, undefined, { newRecord: years > p.sandboxBest && p.sandboxBest > 0 });
   }, []);
 
-  return { progress, loaded, completeLesson, recordRun, solveProblem, recordQuiz, recordSandbox };
+  return { progress, loaded, completeLesson, markSeen, toggleSaved, recordRun, solveProblem, recordQuiz, recordSandbox };
 }

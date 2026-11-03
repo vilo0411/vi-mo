@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const ITEMS = [
+  { href: "/", label: "Thư viện" },
   { href: "/lo-trinh", label: "Bắt đầu học" },
-  { href: "/", label: "Bản đồ" },
   { href: "/thu-thach", label: "Thử thách" },
   { href: "/case-study", label: "Case study" },
   { href: "/tu-dien", label: "Chỉ số" },
@@ -25,7 +25,7 @@ export default function Nav() {
         </Link>
         <nav className="flex min-w-0 gap-1 overflow-x-auto text-sm">
           {ITEMS.map((it) => {
-            const active = it.href === "/" ? path === "/" : path.startsWith(it.href);
+            const active = it.href === "/" ? path === "/" || path.startsWith("/ban-do") : path.startsWith(it.href);
             return (
               <Link
                 key={it.href}

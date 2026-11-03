@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { GROUPS, INDICATORS, INDICATOR_BY_ID } from "@/content/indicators";
-import { MAPS, MAP_BY_ID } from "@/content/maps";
+import { MAP_BY_ID } from "@/content/maps";
 import { LINKS, linkKey, type Link as CausalLink } from "@/content/links";
 import { branchesOf, exploreOrder, revealedFor } from "@/lib/explore";
 import { formatManual, formatValue, getSeries, latest, lowerFirst, manualConcept, YEAR_RANGE, zScore } from "@/lib/data";
 import { findPaths } from "@/lib/paths";
+import { useProgress } from "@/lib/progress";
 import MacroGraph, { GraphLegend, latestState, type NodeState } from "./MacroGraph";
 import SeriesChart from "./SeriesChart";
 import ContributionChart from "./ContributionChart";
@@ -20,11 +21,11 @@ type Selection = { kind: "node"; id: string } | { kind: "link"; key: string } | 
 const INTRO_KEY = "vi-mo:intro-dismissed";
 const GDP_PARTS = new Set(["gdp_growth", "consumption", "investment", "gov_spending", "net_exports"]);
 
-export default function MapExplorer() {
+export default function MapExplorer({ mapId }: { mapId: string }) {
   const params = useSearchParams();
   const focus = useMemo(() => params.get("focus")?.split(",").filter((id) => INDICATOR_BY_ID[id]) ?? [], [params]);
-  const [sel, setSel] = useState<Selection>(null);
-  const [mapId, setMapId] = useState(MAP_BY_ID[params.get("map") ?? ""] ? params.get("map")! : "chinh");
+  const metric = params.get("m");
+  const [sel, setSel] = useState<Selection>(metric && INDICATOR_BY_ID[metric] ? { kind: "node", id: metric } : null);
   const [yearMode, setYearMode] = useState(false);
   const [year, setYear] = useState(2008);
   const [pathFrom, setPathFrom] = useState(params.get("from") ?? "");
@@ -33,6 +34,11 @@ export default function MapExplorer() {
   const [explore, setExplore] = useState<Explore | null>(params.get("explore") ? startExplore("gdp_growth") : null);
   const [intro, setIntro] = useState(false);
   const wide = useWide();
+  const { markSeen } = useProgress();
+
+  useEffect(() => {
+    markSeen(`map:${mapId}`);
+  }, [mapId, markSeen]);
 
   useEffect(() => {
     try {
@@ -124,9 +130,14 @@ export default function MapExplorer() {
     <div className="space-y-3">
       <div className="flex flex-col lg:flex-row gap-3 lg:items-end justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Bản đồ chỉ số vĩ mô</h1>
+          <nav className="text-sm text-muted mb-1" aria-label="Vị trí">
+            <Link href="/" className="hover:text-text">Thư viện</Link>
+            <span className="mx-1.5" aria-hidden>›</span>
+            <span className="text-text">{map.name}</span>
+          </nav>
+          <h1 className="text-2xl font-semibold">{map.name}</h1>
           <p className="text-sm text-muted mt-1 max-w-2xl">
-            Mỗi thẻ là một chỉ số với số liệu thật mới nhất của Việt Nam. Mỗi mũi tên là một quan hệ nhân quả. Rê chuột lên thẻ để xem định nghĩa, bấm để xem chi tiết.
+            {map.hint} Mỗi thẻ là một chỉ số, mỗi mũi tên là một quan hệ nhân quả. Bấm vào thẻ để xem chi tiết.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -151,26 +162,6 @@ export default function MapExplorer() {
           <span className={`font-medium tabular-nums ${yearMode ? "" : "text-muted"}`}>{year}</span>
         </div>
       </div>
-
-      {!explore && (
-        <div className="flex flex-wrap items-center gap-2">
-          {MAPS.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => {
-                setMapId(m.id);
-                setSel(null);
-              }}
-              title={m.hint}
-              className={`text-sm px-3 py-1.5 rounded-full border ${m.id === mapId ? "border-accent text-accent bg-accent-soft font-medium" : "border-line text-muted hover:text-text"}`}
-            >
-              {m.name}
-            </button>
-          ))}
-          <span className="text-xs text-muted ml-1">{map.hint}</span>
-        </div>
-      )}
 
       <div className="flex flex-wrap items-center gap-2 text-sm bg-surface border border-line rounded-xl px-4 py-2.5">
         <span className="font-medium">Tìm đường đi:</span>

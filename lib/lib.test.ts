@@ -11,7 +11,8 @@ import { SCENARIOS } from "@/content/scenarios";
 import { LESSONS } from "@/content/lessons";
 import { exploreOrder, revealedFor } from "./explore";
 import { TERMS } from "@/content/glossary";
-import { MAPS } from "@/content/maps";
+import { firstMapWith, MAPS, MAP_BY_ID } from "@/content/maps";
+import { FEATURED_KEYS, LIBRARY_CATEGORIES, LIBRARY_ITEMS } from "@/content/library";
 import { FEYNMAN } from "@/content/feynman";
 import { contributionAt, contributions } from "./contributions";
 import { INDICATOR_BY_ID, measureOf } from "@/content/indicators";
@@ -278,6 +279,28 @@ describe("bản đồ con và bài học", () => {
     for (const m of MAPS) if (m.ids !== "all") for (const id of m.ids) expect(ids.has(id), `${m.id}/${id}`).toBe(true);
     const main = MAPS[0].ids as string[];
     for (const id of main) expect(INDICATOR_BY_ID[id].concept, id).toBeFalsy();
+  });
+
+  it("mọi thẻ trong bản đồ con đều nối với ít nhất một thẻ khác", () => {
+    for (const m of MAPS) {
+      if (m.ids === "all") continue;
+      const ids = new Set(m.ids);
+      for (const id of m.ids) expect(LINKS.some((l) => (l.from === id && ids.has(l.to)) || (l.to === id && ids.has(l.from))), `${m.id}/${id}`).toBe(true);
+    }
+  });
+
+  it("thư viện không trùng mục, mỗi chủ đề có ít nhất hai mục và mọi mục trỏ tới bản đồ có thật", () => {
+    expect(new Set(LIBRARY_ITEMS.map((it) => it.key)).size).toBe(LIBRARY_ITEMS.length);
+    for (const c of Object.keys(LIBRARY_CATEGORIES)) expect(LIBRARY_ITEMS.filter((it) => it.category === c).length, c).toBeGreaterThanOrEqual(2);
+    for (const it of LIBRARY_ITEMS) {
+      expect(LIBRARY_CATEGORIES[it.category], it.key).toBeDefined();
+      if (it.type === "map") expect(MAP_BY_ID[it.href.replace("/ban-do/", "")], it.key).toBeDefined();
+    }
+    for (const k of FEATURED_KEYS) expect(LIBRARY_ITEMS.some((it) => it.key === k), k).toBe(true);
+  });
+
+  it("mọi chỉ số đều mở được trên một bản đồ con", () => {
+    for (const i of INDICATORS) expect(firstMapWith(i.id), i.id).not.toBe("toan-bo");
   });
 
   it("mỗi bài học có giải thích Feynman và ít nhất một thành phần tương tác", () => {

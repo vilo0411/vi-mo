@@ -4,12 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { INDICATOR_BY_ID } from "@/content/indicators";
 import { TERM_CATEGORIES, TERM_SOURCES, TERMS, type TermCategory } from "@/content/glossary";
+import { fold } from "@/lib/text";
 import SeriesChart from "./SeriesChart";
-
-/** Bỏ dấu tiếng Việt để tìm "lam phat" vẫn ra "lạm phát". */
-function fold(s: string) {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
-}
 
 export default function Glossary() {
   const [q, setQ] = useState("");

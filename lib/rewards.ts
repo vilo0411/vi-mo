@@ -22,9 +22,13 @@ export type Progress = {
   quiz: Record<string, number>;
   /** Số năm trụ được lâu nhất ở chế độ tự do */
   sandboxBest: number;
+  /** Các mục đã mở trong thư viện, ví dụ "map:chinh" */
+  seenItems: Record<string, true>;
+  /** Các mục người học lưu lại trong thư viện */
+  savedItems: Record<string, true>;
 };
 
-export const EMPTY_PROGRESS: Progress = { lessons: {}, stars: {}, best: {}, solved: {}, cleanSolves: {}, badges: {}, days: [], daily: {}, quiz: {}, sandboxBest: 0 };
+export const EMPTY_PROGRESS: Progress = { lessons: {}, stars: {}, best: {}, solved: {}, cleanSolves: {}, badges: {}, days: [], daily: {}, quiz: {}, sandboxBest: 0, seenItems: {}, savedItems: {} };
 
 /** Kết quả một lượt chơi thử thách, dùng cho các huy hiệu cần biết người chơi đã làm gì. */
 export type RunInfo = {

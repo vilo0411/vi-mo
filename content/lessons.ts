@@ -49,7 +49,7 @@ export const LESSONS: Lesson[] = [
         explain: "Lạm phát là phần trăm tăng giá: (104.000 − 100.000) / 100.000 = 4%.",
       },
     ],
-    tryIt: { label: "Xem ba chỉ số này trên bản đồ", href: "/?focus=gdp_growth,cpi,unemployment" },
+    tryIt: { label: "Xem ba chỉ số này trên bản đồ", href: "/ban-do/chinh?focus=gdp_growth,cpi,unemployment" },
   },
   {
     slug: "ai-tieu-tien",
@@ -86,7 +86,7 @@ export const LESSONS: Lesson[] = [
         explain: "Đóng góp = tỷ trọng × tốc độ tăng = 0,30 × 10% = 3 điểm %. Đầu tư tăng nhanh nhưng chỉ là một phần ba nền kinh tế, nên chỉ kéo GDP lên khoảng 3 điểm %.",
       },
     ],
-    tryIt: { label: "Xem bốn thành phần trên bản đồ", href: "/?focus=consumption,investment,gov_spending,net_exports,gdp_growth" },
+    tryIt: { label: "Xem bốn thành phần trên bản đồ", href: "/ban-do/tong-cau?focus=consumption,investment,gov_spending,net_exports,gdp_growth" },
   },
   {
     slug: "lai-suat",
@@ -144,7 +144,7 @@ export const LESSONS: Lesson[] = [
         explain: "Bán đô la tăng nguồn cung đô la trên thị trường. Tăng lãi suất làm giữ tiền đồng hấp dẫn hơn. Năm 2022 NHNN đã dùng cả hai.",
       },
     ],
-    tryIt: { label: "Tìm đường từ Fed tới lạm phát Việt Nam", href: "/?from=fed_rate&to=cpi" },
+    tryIt: { label: "Tìm đường từ Fed tới lạm phát Việt Nam", href: "/ban-do/chinh?from=fed_rate&to=cpi" },
   },
   {
     slug: "chinh-phu-thu-chi",
