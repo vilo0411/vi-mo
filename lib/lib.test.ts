@@ -12,6 +12,8 @@ import { LESSONS } from "@/content/lessons";
 import { exploreOrder, revealedFor } from "./explore";
 import { TERMS } from "@/content/glossary";
 import { firstMapWith, MAPS, MAP_BY_ID } from "@/content/maps";
+import { flattenTree, TREES, TREE_BY_ID } from "@/content/trees";
+import { layoutTree, TREE_CARD } from "./treeLayout";
 import { FEATURED_KEYS, LIBRARY_CATEGORIES, LIBRARY_ITEMS } from "@/content/library";
 import { FEYNMAN } from "@/content/feynman";
 import { INDICATOR_PROFILES } from "@/content/indicatorProfiles";
@@ -297,6 +299,7 @@ describe("bản đồ con và bài học", () => {
     for (const it of LIBRARY_ITEMS) {
       expect(LIBRARY_CATEGORIES[it.category], it.key).toBeDefined();
       if (it.type === "map") expect(MAP_BY_ID[it.href.replace("/ban-do/", "")], it.key).toBeDefined();
+      if (it.type === "tree") expect(TREE_BY_ID[it.href.replace("/cay/", "")], it.key).toBeDefined();
     }
     for (const k of FEATURED_KEYS) expect(LIBRARY_ITEMS.some((it) => it.key === k), k).toBe(true);
   });
@@ -326,6 +329,37 @@ describe("bản đồ con và bài học", () => {
       for (const id of core) {
         expect(m.ids.includes(id), `${m.id}/${id}`).toBe(true);
         expect(LINKS.some((l) => (l.from === id && set.has(l.to)) || (l.to === id && set.has(l.from))), `${m.id}/${id}`).toBe(true);
+      }
+    }
+  });
+
+  it("cây câu hỏi đúng cấu trúc, trỏ tới chỉ số có thật và không mâu thuẫn với bản đồ", () => {
+    for (const t of TREES) {
+      expect(MAP_BY_ID[t.mapId], t.id).toBeDefined();
+      expect(t.root.kind, t.id).toBe("key");
+      const all = flattenTree(t.root);
+      expect(new Set(all.map((n) => n.id)).size, t.id).toBe(all.length);
+      for (const n of all) {
+        expect(n.question.endsWith("?"), n.id).toBe(true);
+        expect(n.note.length, n.id).toBeGreaterThan(0);
+        if (n.indicatorId) expect(INDICATOR_BY_ID[n.indicatorId], n.id).toBeDefined();
+        for (const c of n.children ?? []) {
+          expect(c.kind, c.id).toBe(n.kind === "key" ? "component" : "driver");
+          const link = LINKS.find((l) => l.from === c.indicatorId && l.to === n.indicatorId);
+          if (link) expect(c.sign, `${c.id}->${n.id}`).toBe(link.sign);
+        }
+      }
+      expect(all.some((n) => n.kind === "driver"), t.id).toBe(true);
+    }
+  });
+
+  it("bố cục cây không để hai thẻ chồng lên nhau", () => {
+    for (const t of TREES) {
+      const pos = Object.values(layoutTree(t.root));
+      for (const [i, a] of pos.entries()) {
+        for (const b of pos.slice(i + 1)) {
+          expect(Math.abs(a.x - b.x) >= TREE_CARD.w || Math.abs(a.y - b.y) >= TREE_CARD.h, t.id).toBe(true);
+        }
       }
     }
   });

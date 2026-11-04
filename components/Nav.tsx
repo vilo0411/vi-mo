@@ -25,7 +25,7 @@ export default function Nav() {
         </Link>
         <nav className="flex min-w-0 gap-1 overflow-x-auto text-sm">
           {ITEMS.map((it) => {
-            const active = it.href === "/" ? path === "/" || path.startsWith("/ban-do") : path.startsWith(it.href);
+            const active = it.href === "/" ? path === "/" || path.startsWith("/ban-do") || path.startsWith("/cay") : path.startsWith(it.href);
             return (
               <Link
                 key={it.href}

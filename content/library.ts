@@ -1,8 +1,9 @@
 import { INDICATORS } from "./indicators";
 import { MAPS, type LibraryCategory } from "./maps";
+import { flattenTree, TREES } from "./trees";
 
 export type { LibraryCategory } from "./maps";
-export type LibraryItemType = "map";
+export type LibraryItemType = "map" | "tree";
 
 export type LibraryItem = {
   /** Khóa dùng chung cho tiến độ, ví dụ "map:chinh" */
@@ -27,9 +28,9 @@ export const LIBRARY_CATEGORIES: Record<LibraryCategory, { name: string; hint: s
 
 export const FEATURED_KEYS = ["map:chinh", "map:tong-cau", "map:tien-te", "map:doi-ngoai"];
 
-export const TYPE_LABELS: Record<LibraryItemType, string> = { map: "Bản đồ" };
+export const TYPE_LABELS: Record<LibraryItemType, string> = { map: "Bản đồ", tree: "Cây câu hỏi" };
 
-export const LIBRARY_ITEMS: LibraryItem[] = MAPS.map((m) => {
+const MAP_ITEMS: LibraryItem[] = MAPS.map((m) => {
   const count = m.ids === "all" ? INDICATORS.length : m.ids.length;
   return {
     key: `map:${m.id}`,
@@ -43,3 +44,20 @@ export const LIBRARY_ITEMS: LibraryItem[] = MAPS.map((m) => {
     countLabel: `${count} chỉ số`,
   };
 });
+
+const TREE_ITEMS: LibraryItem[] = TREES.map((t) => {
+  const count = flattenTree(t.root).length;
+  return {
+    key: `tree:${t.id}`,
+    type: "tree",
+    id: t.id,
+    name: t.name,
+    hint: t.hint,
+    category: t.category,
+    href: `/cay/${t.id}`,
+    count,
+    countLabel: `${count} câu hỏi`,
+  };
+});
+
+export const LIBRARY_ITEMS: LibraryItem[] = [...MAP_ITEMS, ...TREE_ITEMS];

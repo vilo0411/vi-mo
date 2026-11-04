@@ -183,3 +183,15 @@ select {
     }
   }
 }
+
+/* Nút phóng to của đồ thị theo màu giao diện, kể cả dark mode */
+.react-flow__controls-button {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--text);
+  fill: currentColor;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--surface-2);
+}
