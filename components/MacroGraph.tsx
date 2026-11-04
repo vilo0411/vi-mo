@@ -270,7 +270,7 @@ function loadOverrides(): Record<string, XY> {
  * Tự tính viewport thay vì gọi fitView(): với nodes được điều khiển từ ngoài, fitView() xếp hàng chờ
  * một lần setNodes và có thể không bao giờ chạy.
  */
-export function AutoFit({ ids, focus, reserveRight = 0 }: { ids: string[]; focus: boolean; reserveRight?: number }) {
+function AutoFit({ ids, focus, reserveRight = 0 }: { ids: string[]; focus: boolean; reserveRight?: number }) {
   const { getNodesBounds, setViewport, viewportInitialized } = useReactFlow();
   const width = useStore((s) => s.width);
   const height = useStore((s) => s.height);

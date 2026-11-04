@@ -1,16 +1,17 @@
 "use client";
 
 import "@xyflow/react/dist/style.css";
-import { memo, useMemo } from "react";
-import { Background, Controls, Handle, MarkerType, Position, ReactFlow, type Edge, type Node, type NodeProps } from "@xyflow/react";
+import { memo, useEffect, useMemo, useRef } from "react";
+import { Background, Controls, getViewportForBounds, Handle, MarkerType, Position, ReactFlow, useReactFlow, useStore, type Edge, type Node, type NodeProps, type Rect } from "@xyflow/react";
 import { INDICATOR_BY_ID } from "@/content/indicators";
 import { flattenTree, TREE_LEVELS, type TreeKind, type TreeNode } from "@/content/trees";
 import { columnX, layoutTree, TREE_CARD } from "@/lib/treeLayout";
-import { AutoFit, latestState } from "./MacroGraph";
+import { latestState } from "./MacroGraph";
 
 type CardData = { node: TreeNode; dim: boolean; selected: boolean };
 type HeaderData = { kind: TreeKind };
 
+const HEADER_H = 40;
 const KIND_COLOR: Record<TreeKind, string> = { key: "var(--g-ket-qua)", component: "var(--chart-2)", driver: "var(--chart-1)" };
 
 const TreeCard = memo(function TreeCard({ data }: NodeProps<Node<CardData>>) {
@@ -44,8 +45,6 @@ function TreeHeader({ data }: NodeProps<Node<HeaderData>>) {
   const level = TREE_LEVELS[data.kind];
   return (
     <div style={{ width: TREE_CARD.w }} className="border-b-2 border-line pb-1">
-      {/* React Flow chỉ coi nút đã sẵn sàng khi nó có handle, thiếu cái này AutoFit không chạy. */}
-      <Handle type="source" position={Position.Bottom} className="opacity-0" isConnectable={false} />
       <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: KIND_COLOR[data.kind] }}>{level.name}</div>
       <div className="text-xs text-muted">{level.hint}</div>
     </div>
@@ -53,6 +52,32 @@ function TreeHeader({ data }: NodeProps<Node<HeaderData>>) {
 }
 
 const nodeTypes = { card: TreeCard, header: TreeHeader };
+
+/** Căn cây vừa khung. Vị trí đã biết trước nên tính thẳng, không cần chờ React Flow đo thẻ. */
+function FitTree({ bounds }: { bounds: Rect }) {
+  const { getViewport, setViewport, viewportInitialized } = useReactFlow();
+  const width = useStore((s) => s.width);
+  const height = useStore((s) => s.height);
+  const fitted = useRef(false);
+  useEffect(() => {
+    if (!viewportInitialized || !width || !height) return;
+    const vp = getViewportForBounds(bounds, width, height, 0.25, 1, "24px");
+    setViewport(vp, { duration: fitted.current ? 300 : 0 });
+    if (fitted.current) return;
+    // Ngay sau khi tải trang, lệnh căn đôi lúc bị bỏ qua vì khung nhìn chưa sẵn sàng hẳn nên phải thử lại.
+    let tries = 0;
+    const timer = setInterval(() => {
+      const applied = Math.abs(getViewport().zoom - vp.zoom) < 0.001;
+      if (!applied) setViewport(vp);
+      if (applied || ++tries >= 10) {
+        fitted.current = true;
+        clearInterval(timer);
+      }
+    }, 100);
+    return () => clearInterval(timer);
+  }, [bounds, viewportInitialized, width, height, getViewport, setViewport]);
+  return null;
+}
 
 export default function TreeGraph({ root, active, onPick, onClear }: { root: TreeNode; active: string | null; onPick: (n: TreeNode) => void; onClear: () => void }) {
   const all = useMemo(() => flattenTree(root), [root]);
@@ -73,13 +98,25 @@ export default function TreeGraph({ root, active, onPick, onClear }: { root: Tre
     return out;
   }, [active, root]);
 
+  const top = useMemo(() => Math.min(...Object.values(pos).map((p) => p.y)) - HEADER_H - 22, [pos]);
+  const bounds = useMemo<Rect>(() => {
+    const cards = Object.values(pos);
+    return {
+      x: 0,
+      y: top,
+      width: Math.max(...cards.map((p) => p.x)) + TREE_CARD.w,
+      height: Math.max(...cards.map((p) => p.y)) + TREE_CARD.h - top,
+    };
+  }, [pos, top]);
+
   const nodes = useMemo<Node[]>(() => {
-    const top = Math.min(...Object.values(pos).map((p) => p.y)) - 62;
     const headers: Node[] = (Object.keys(TREE_LEVELS) as TreeKind[]).map((kind) => ({
       id: `header-${kind}`,
       type: "header",
       position: { x: columnX(kind), y: top },
       data: { kind },
+      width: TREE_CARD.w,
+      height: HEADER_H,
       selectable: false,
       draggable: false,
     }));
@@ -90,10 +127,12 @@ export default function TreeGraph({ root, active, onPick, onClear }: { root: Tre
         type: "card",
         position: pos[node.id],
         data: { node, dim: !!lit && !lit.has(node.id), selected: node.id === active },
+        width: TREE_CARD.w,
+        height: TREE_CARD.h,
         draggable: false,
       })),
     ];
-  }, [all, pos, lit, active]);
+  }, [all, pos, lit, active, top]);
 
   const edges = useMemo<Edge[]>(
     () =>
@@ -129,7 +168,7 @@ export default function TreeGraph({ root, active, onPick, onClear }: { root: Tre
       >
         <Background color="var(--grid)" gap={20} size={1.2} />
         <Controls showInteractive={false} />
-        <AutoFit ids={nodes.map((n) => n.id)} focus={false} />
+        <FitTree bounds={bounds} />
       </ReactFlow>
     </div>
   );
