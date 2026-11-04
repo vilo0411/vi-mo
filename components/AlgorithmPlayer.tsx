@@ -9,6 +9,7 @@ import { TREE_BY_ID } from "@/content/trees";
 import { layoutAlgorithm, stepMap } from "@/lib/algorithm";
 import { formatValue, getSeries, latest } from "@/lib/data";
 import { useProgress } from "@/lib/progress";
+import RichText from "./RichText";
 import SeriesChart from "./SeriesChart";
 
 /** Một chặng đã đi: đứng ở bước nào và đã chọn gì để rời bước đó. */
@@ -86,7 +87,9 @@ export default function AlgorithmPlayer({ algorithmId }: { algorithmId: string }
 
 function Check({ step, index, onChoose }: { step: CheckStep; index: number; onChoose: (o: AlgorithmOption) => void }) {
   const ind = INDICATOR_BY_ID[step.metricId];
-  const s = getSeries(ind.seriesId);
+  const seriesId = step.seriesId ?? ind.seriesId;
+  const label = step.seriesLabel ?? ind.name;
+  const s = getSeries(seriesId);
   const last = latest(s);
   return (
     <>
@@ -98,9 +101,9 @@ function Check({ step, index, onChoose }: { step: CheckStep; index: number; onCh
       {last && (
         <div>
           <p className="text-sm text-muted mb-1">
-            {ind.name}, năm {last.year}: <span className="text-text font-medium">{formatValue(last.value, s?.unit)}</span>
+            {label}, năm {last.year}: <span className="text-text font-medium">{formatValue(last.value, s?.unit)}</span>
           </p>
-          <SeriesChart lines={[{ id: ind.seriesId, label: ind.name }]} height={200} from={2000} />
+          <SeriesChart lines={[{ id: seriesId, label }]} height={200} from={2000} />
         </div>
       )}
       <div className="grid gap-2 sm:grid-cols-2">
@@ -132,7 +135,7 @@ function Conclusion({ step, alg, recaps, onRestart }: { step: ConclusionStep; al
       </div>
       <div>
         <h3 className="text-xs uppercase tracking-wider text-muted mb-1.5">Chuyện gì có lẽ đang xảy ra</h3>
-        <p className="leading-relaxed">{step.story}</p>
+        <p className="leading-relaxed"><RichText text={step.story} /></p>
       </div>
       <div>
         <h3 className="text-xs uppercase tracking-wider text-muted mb-1.5">Chính sách có thể làm gì</h3>
@@ -150,7 +153,7 @@ function Conclusion({ step, alg, recaps, onRestart }: { step: ConclusionStep; al
       )}
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <button type="button" onClick={onRestart} className="px-3 py-1.5 rounded-lg bg-accent text-white">Làm lại từ đầu</button>
-        <Link href={`/cay/${alg.treeId}`} className="text-accent">{TREE_BY_ID[alg.treeId].name}</Link>
+        {alg.treeId && <Link href={`/cay/${alg.treeId}`} className="text-accent">{TREE_BY_ID[alg.treeId].name}</Link>}
         <Link href={`/ban-do/${alg.mapId}`} className="text-accent">Xem trên bản đồ</Link>
       </div>
     </>

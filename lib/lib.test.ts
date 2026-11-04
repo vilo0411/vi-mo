@@ -222,6 +222,7 @@ describe("thuật ngữ", () => {
       for (const r of t.related ?? []) expect(ids.has(r), `${t.id}: ${r}`).toBe(true);
       if (t.seriesId) expect(SERIES[t.seriesId]?.points.length, t.id).toBeGreaterThan(5);
       expect(t.id, t.id).toMatch(/^[a-z0-9-]+$/);
+      expect(`${t.short} ${t.detail} ${t.example ?? ""}`, t.id).not.toMatch(/NHNN|\bapp\b/);
     }
   });
 });
@@ -309,6 +310,11 @@ describe("bản đồ con và bài học", () => {
     for (const k of FEATURED_KEYS) expect(LIBRARY_ITEMS.some((it) => it.key === k), k).toBe(true);
   });
 
+  it("mọi chỉ số đều có hồ sơ", () => {
+    for (const i of INDICATORS) expect(INDICATOR_PROFILES[i.id], i.id).toBeDefined();
+    expect(Object.keys(INDICATOR_PROFILES).length).toBe(INDICATORS.length);
+  });
+
   it("hồ sơ chỉ số trỏ tới chỉ số và thuật ngữ có thật", () => {
     const known = new Set([...INDICATORS.map((i) => i.id), ...TERMS.map((t) => t.id)]);
     for (const [id, p] of Object.entries(INDICATOR_PROFILES)) {
@@ -362,12 +368,17 @@ describe("bản đồ con và bài học", () => {
     const slugs = new Set(CASES.map((c) => c.slug));
     for (const a of ALGORITHMS) {
       expect(algorithmProblems(a), a.id).toEqual([]);
-      expect(TREE_BY_ID[a.treeId], a.id).toBeDefined();
+      if (a.treeId) expect(TREE_BY_ID[a.treeId], a.id).toBeDefined();
       expect(MAP_BY_ID[a.mapId], a.id).toBeDefined();
       expect(layoutAlgorithm(a).length, a.id).toBe(a.steps.length);
       for (const s of a.steps) {
-        if (s.kind === "check") expect(INDICATOR_BY_ID[s.metricId], s.id).toBeDefined();
-        else if (s.caseSlug) expect(slugs.has(s.caseSlug), s.id).toBe(true);
+        if (s.kind === "check") {
+          expect(INDICATOR_BY_ID[s.metricId], s.id).toBeDefined();
+          if (s.seriesId) expect(SERIES[s.seriesId], s.id).toBeDefined();
+        } else {
+          if (s.caseSlug) expect(slugs.has(s.caseSlug), s.id).toBe(true);
+          for (const ref of refsIn(s.story)) expect(INDICATOR_BY_ID[ref] ?? TERMS.find((t) => t.id === ref), ref).toBeDefined();
+        }
       }
     }
   });

@@ -1,4 +1,8 @@
 import type { Indicator } from "./indicators";
+import { EXTERNAL_PROFILES } from "./profiles/doi-ngoai";
+import { FISCAL_PROFILES } from "./profiles/tai-khoa";
+import { MONEY_PROFILES } from "./profiles/tien-te";
+import { DEMAND_PROFILES } from "./profiles/tong-cau";
 
 /**
  * Hồ sơ sâu của một chỉ số, hiện ở các tab Cách tính, Vì sao, Phân tích.
@@ -29,7 +33,7 @@ export const BASIC_QUESTIONS = [
   "Nguyên nhân chính đến từ trong nước hay từ bên ngoài?",
 ];
 
-export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
+const CORE_PROFILES: Record<string, IndicatorProfile> = {
   cpi: {
     alsoCalled: ["Lạm phát tổng thể", "Tốc độ tăng chỉ số giá tiêu dùng"],
     nuances: [
@@ -131,6 +135,14 @@ export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
       decide: ["Mình có đang tích trữ hàng hay đổi tiền sang vàng chỉ vì sợ giá tăng không, và điều đó có thật sự cần không?"],
     },
   },
+};
+
+export const INDICATOR_PROFILES: Record<string, IndicatorProfile> = {
+  ...CORE_PROFILES,
+  ...MONEY_PROFILES,
+  ...DEMAND_PROFILES,
+  ...FISCAL_PROFILES,
+  ...EXTERNAL_PROFILES,
 };
 
 const plain = (s: string) => s.replace(/\*\*/g, "").replace(/\[\[[^|\]]+\|([^\]]+)\]\]/g, "$1");
