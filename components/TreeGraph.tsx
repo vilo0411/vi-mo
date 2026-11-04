@@ -55,27 +55,15 @@ const nodeTypes = { card: TreeCard, header: TreeHeader };
 
 /** Căn cây vừa khung. Vị trí đã biết trước nên tính thẳng, không cần chờ React Flow đo thẻ. */
 function FitTree({ bounds }: { bounds: Rect }) {
-  const { getViewport, setViewport, viewportInitialized } = useReactFlow();
+  const { setViewport, viewportInitialized } = useReactFlow();
   const width = useStore((s) => s.width);
   const height = useStore((s) => s.height);
   const fitted = useRef(false);
   useEffect(() => {
     if (!viewportInitialized || !width || !height) return;
-    const vp = getViewportForBounds(bounds, width, height, 0.25, 1, "24px");
-    setViewport(vp, { duration: fitted.current ? 300 : 0 });
-    if (fitted.current) return;
-    // Ngay sau khi tải trang, lệnh căn đôi lúc bị bỏ qua vì khung nhìn chưa sẵn sàng hẳn nên phải thử lại.
-    let tries = 0;
-    const timer = setInterval(() => {
-      const applied = Math.abs(getViewport().zoom - vp.zoom) < 0.001;
-      if (!applied) setViewport(vp);
-      if (applied || ++tries >= 10) {
-        fitted.current = true;
-        clearInterval(timer);
-      }
-    }, 100);
-    return () => clearInterval(timer);
-  }, [bounds, viewportInitialized, width, height, getViewport, setViewport]);
+    setViewport(getViewportForBounds(bounds, width, height, 0.25, 1, "24px"), { duration: fitted.current ? 300 : 0 });
+    fitted.current = true;
+  }, [bounds, viewportInitialized, width, height, setViewport]);
   return null;
 }
 
