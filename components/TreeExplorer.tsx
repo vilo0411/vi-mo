@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ALGORITHMS } from "@/content/algorithms";
 import { TREE_BY_ID, TREE_LEVELS, type TreeKind, type TreeNode } from "@/content/trees";
 import { useProgress } from "@/lib/progress";
 import MetricPanel from "./MetricPanel";
@@ -15,6 +16,7 @@ export default function TreeExplorer({ treeId }: { treeId: string }) {
   const [metric, setMetric] = useState<string | null>(null);
   const [showQuestions, setShowQuestions] = useState(true);
   const { markSeen } = useProgress();
+  const algorithm = ALGORITHMS.find((a) => a.treeId === treeId);
 
   useEffect(() => {
     markSeen(`tree:${treeId}`);
@@ -46,6 +48,7 @@ export default function TreeExplorer({ treeId }: { treeId: string }) {
             <input type="checkbox" checked={showQuestions} onChange={(e) => setShowQuestions(e.target.checked)} />
             Câu hỏi của cây
           </label>
+          {algorithm && <Link href={`/chan-doan/${algorithm.id}`} className="px-3 py-1.5 rounded-lg bg-accent text-white">Chẩn đoán từng bước</Link>}
           <Link href={`/ban-do/${tree.mapId}`} className="text-accent">Xem trên bản đồ →</Link>
         </div>
       </div>

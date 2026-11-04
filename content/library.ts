@@ -1,9 +1,10 @@
+import { ALGORITHMS } from "./algorithms";
 import { INDICATORS } from "./indicators";
 import { MAPS, type LibraryCategory } from "./maps";
 import { flattenTree, TREES } from "./trees";
 
 export type { LibraryCategory } from "./maps";
-export type LibraryItemType = "map" | "tree";
+export type LibraryItemType = "map" | "tree" | "algorithm";
 
 export type LibraryItem = {
   /** Khóa dùng chung cho tiến độ, ví dụ "map:chinh" */
@@ -28,7 +29,7 @@ export const LIBRARY_CATEGORIES: Record<LibraryCategory, { name: string; hint: s
 
 export const FEATURED_KEYS = ["map:chinh", "map:tong-cau", "map:tien-te", "map:doi-ngoai"];
 
-export const TYPE_LABELS: Record<LibraryItemType, string> = { map: "Bản đồ", tree: "Cây câu hỏi" };
+export const TYPE_LABELS: Record<LibraryItemType, string> = { map: "Bản đồ", tree: "Cây câu hỏi", algorithm: "Chẩn đoán" };
 
 const MAP_ITEMS: LibraryItem[] = MAPS.map((m) => {
   const count = m.ids === "all" ? INDICATORS.length : m.ids.length;
@@ -60,4 +61,19 @@ const TREE_ITEMS: LibraryItem[] = TREES.map((t) => {
   };
 });
 
-export const LIBRARY_ITEMS: LibraryItem[] = [...MAP_ITEMS, ...TREE_ITEMS];
+const ALGORITHM_ITEMS: LibraryItem[] = ALGORITHMS.map((a) => {
+  const count = a.steps.filter((s) => s.kind === "check").length;
+  return {
+    key: `algorithm:${a.id}`,
+    type: "algorithm",
+    id: a.id,
+    name: a.name,
+    hint: a.hint,
+    category: a.category,
+    href: `/chan-doan/${a.id}`,
+    count,
+    countLabel: `${count} câu kiểm tra`,
+  };
+});
+
+export const LIBRARY_ITEMS: LibraryItem[] = [...MAP_ITEMS, ...TREE_ITEMS, ...ALGORITHM_ITEMS];

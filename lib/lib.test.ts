@@ -13,6 +13,9 @@ import { exploreOrder, revealedFor } from "./explore";
 import { TERMS } from "@/content/glossary";
 import { firstMapWith, MAPS, MAP_BY_ID } from "@/content/maps";
 import { flattenTree, TREES, TREE_BY_ID } from "@/content/trees";
+import { ALGORITHMS, ALGORITHM_BY_ID } from "@/content/algorithms";
+import { CASES } from "@/content/cases";
+import { algorithmProblems, layoutAlgorithm } from "./algorithm";
 import { layoutTree, TREE_CARD } from "./treeLayout";
 import { FEATURED_KEYS, LIBRARY_CATEGORIES, LIBRARY_ITEMS } from "@/content/library";
 import { FEYNMAN } from "@/content/feynman";
@@ -301,6 +304,7 @@ describe("bản đồ con và bài học", () => {
       expect(LIBRARY_CATEGORIES[it.category], it.key).toBeDefined();
       if (it.type === "map") expect(MAP_BY_ID[it.href.replace("/ban-do/", "")], it.key).toBeDefined();
       if (it.type === "tree") expect(TREE_BY_ID[it.href.replace("/cay/", "")], it.key).toBeDefined();
+      if (it.type === "algorithm") expect(ALGORITHM_BY_ID[it.href.replace("/chan-doan/", "")], it.key).toBeDefined();
     }
     for (const k of FEATURED_KEYS) expect(LIBRARY_ITEMS.some((it) => it.key === k), k).toBe(true);
   });
@@ -352,6 +356,27 @@ describe("bản đồ con và bài học", () => {
       }
       expect(all.some((n) => n.kind === "driver"), t.id).toBe(true);
     }
+  });
+
+  it("thuật toán chẩn đoán không có nhánh cụt và trỏ tới dữ liệu có thật", () => {
+    const slugs = new Set(CASES.map((c) => c.slug));
+    for (const a of ALGORITHMS) {
+      expect(algorithmProblems(a), a.id).toEqual([]);
+      expect(TREE_BY_ID[a.treeId], a.id).toBeDefined();
+      expect(MAP_BY_ID[a.mapId], a.id).toBeDefined();
+      expect(layoutAlgorithm(a).length, a.id).toBe(a.steps.length);
+      for (const s of a.steps) {
+        if (s.kind === "check") expect(INDICATOR_BY_ID[s.metricId], s.id).toBeDefined();
+        else if (s.caseSlug) expect(slugs.has(s.caseSlug), s.id).toBe(true);
+      }
+    }
+  });
+
+  it("phát hiện được thuật toán có vòng lặp hoặc bước thiếu", () => {
+    const option = (next: string) => ({ label: next, next, recap: next, lead: next });
+    const check = (id: string, a: string, b: string) => ({ id, kind: "check" as const, title: id, prompt: id, metricId: "cpi", whereToLook: id, options: [option(a), option(b)] });
+    const base = { ...ALGORITHMS[0], start: "a" };
+    expect(algorithmProblems({ ...base, steps: [check("a", "a", "b")] }).length).toBeGreaterThan(0);
   });
 
   it("bố cục cây không để hai thẻ chồng lên nhau", () => {
