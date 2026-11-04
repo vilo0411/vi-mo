@@ -194,7 +194,7 @@ export function ProblemCard({
           )}
           <p>{p.solution}</p>
           {p.relatedTerm && (
-            <Link href={`/thuat-ngu#${p.relatedTerm}`} className="text-xs text-accent">
+            <Link href={`/thuat-ngu/${p.relatedTerm}`} className="text-xs text-accent">
               Đọc thêm trong Thuật ngữ →
             </Link>
           )}

@@ -12,7 +12,7 @@ function inline(text: string, onMetric?: (id: string) => void): ReactNode[] {
     if (!ref) return <Fragment key={i}>{part}</Fragment>;
     const [, id, label] = ref;
     const className = "text-accent underline decoration-dotted underline-offset-2";
-    if (!INDICATOR_BY_ID[id]) return <Link key={i} href={`/thuat-ngu#${id}`} className={className}>{label}</Link>;
+    if (!INDICATOR_BY_ID[id]) return <Link key={i} href={`/thuat-ngu/${id}`} className={className}>{label}</Link>;
     if (onMetric) return <button key={i} type="button" onClick={() => onMetric(id)} className={className}>{label}</button>;
     return <Link key={i} href={`/tu-dien/${id}`} className={className}>{label}</Link>;
   });

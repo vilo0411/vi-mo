@@ -218,6 +218,7 @@ describe("thuật ngữ", () => {
     for (const t of TERMS) {
       for (const r of t.related ?? []) expect(ids.has(r), `${t.id}: ${r}`).toBe(true);
       if (t.seriesId) expect(SERIES[t.seriesId]?.points.length, t.id).toBeGreaterThan(5);
+      expect(t.id, t.id).toMatch(/^[a-z0-9-]+$/);
     }
   });
 });

@@ -1,25 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { INDICATOR_BY_ID } from "@/content/indicators";
 import { TERM_CATEGORIES, TERM_SOURCES, TERMS, type TermCategory } from "@/content/glossary";
 import { fold } from "@/lib/text";
-import SeriesChart from "./SeriesChart";
 
 export default function Glossary() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<TermCategory | "all">("all");
-  const [open, setOpen] = useState<string | null>(null);
+  const router = useRouter();
 
-  // Link từ nơi khác tới /thuat-ngu#id thì mở sẵn thuật ngữ đó.
+  // Link cũ dạng /thuat-ngu#id chuyển sang trang riêng của thuật ngữ.
   useEffect(() => {
     const id = decodeURIComponent(window.location.hash.slice(1));
-    if (!TERMS.some((t) => t.id === id)) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setOpen(id);
-    requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
-  }, []);
+    if (TERMS.some((t) => t.id === id)) router.replace(`/thuat-ngu/${id}`);
+  }, [router]);
 
   const list = useMemo(() => {
     const needle = fold(q.trim());
@@ -55,39 +51,16 @@ export default function Glossary() {
       {list.length === 0 && <p className="text-sm text-muted">Không tìm thấy thuật ngữ nào. Thử từ khóa khác hoặc xem trong Từ điển chỉ số.</p>}
 
       <div className="grid gap-3 md:grid-cols-2">
-        {list.map((t) => {
-          const isOpen = open === t.id;
-          return (
-            <article key={t.id} id={t.id} className={`bg-surface border rounded-xl p-4 scroll-mt-20 ${isOpen ? "border-accent md:col-span-2" : "border-line"}`}>
-              <button type="button" onClick={() => setOpen(isOpen ? null : t.id)} className="w-full text-left">
-                <div className="flex items-baseline justify-between gap-3">
-                  <h2 className="font-semibold">{t.term}</h2>
-                  <span className="text-xs text-muted whitespace-nowrap">{TERM_CATEGORIES[t.category]}</span>
-                </div>
-                <div className="text-xs text-muted italic mt-0.5">{t.en}</div>
-                <p className="text-sm mt-2 leading-relaxed">{t.short}</p>
-                {!isOpen && <span className="text-xs text-accent mt-2 inline-block">Đọc thêm</span>}
-              </button>
-              {isOpen && (
-                <div className="mt-3 space-y-3">
-                  <p className="text-sm leading-relaxed">{t.detail}</p>
-                  {t.example && <p className="text-sm leading-relaxed border-l-2 border-accent pl-3">{t.example}</p>}
-                  {t.seriesId && <SeriesChart lines={[{ id: t.seriesId, label: t.term }]} height={180} from={1995} />}
-                  {t.related && (
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <span className="text-xs text-muted">Liên quan trên bản đồ:</span>
-                      {t.related.map((id) => (
-                        <Link key={id} href={`/tu-dien/${id}`} className="text-xs px-2.5 py-1 rounded-full bg-surface-2 hover:text-accent">
-                          {INDICATOR_BY_ID[id].name}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </article>
-          );
-        })}
+        {list.map((t) => (
+          <Link key={t.id} href={`/thuat-ngu/${t.id}`} className="block bg-surface border border-line rounded-xl p-4 hover:border-accent transition-colors">
+            <span className="flex items-baseline justify-between gap-3">
+              <span className="font-semibold">{t.term}</span>
+              <span className="text-xs text-muted whitespace-nowrap">{TERM_CATEGORIES[t.category]}</span>
+            </span>
+            <span className="block text-xs text-muted italic mt-0.5">{t.en}</span>
+            <span className="block text-sm mt-2 leading-relaxed">{t.short}</span>
+          </Link>
+        ))}
       </div>
 
       <section className="text-sm text-muted">

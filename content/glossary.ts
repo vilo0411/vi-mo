@@ -630,3 +630,5 @@ export const TERM_SOURCES = [
   { label: "Investopedia: Macroeconomics", url: "https://www.investopedia.com/terms/m/macroeconomics.asp" },
   { label: "Khan Academy: Macroeconomics", url: "https://www.khanacademy.org/economics-finance-domain/macroeconomics" },
 ];
+
+export const TERM_BY_ID = Object.fromEntries(TERMS.map((t) => [t.id, t])) as Record<string, Term>;

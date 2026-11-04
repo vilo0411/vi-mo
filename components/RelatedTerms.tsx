@@ -17,7 +17,7 @@ export default function RelatedTerms({ id, limit = 6 }: { id: string; limit?: nu
       <ul className="space-y-1.5">
         {terms.map((t) => (
           <li key={t.id}>
-            <Link href={`/thuat-ngu#${t.id}`} className="block rounded-lg border border-line px-3 py-2 hover:border-accent">
+            <Link href={`/thuat-ngu/${t.id}`} className="block rounded-lg border border-line px-3 py-2 hover:border-accent">
               <div className="text-sm font-medium">{t.term}</div>
               <div className="text-xs text-muted mt-0.5 leading-relaxed">{t.short}</div>
             </Link>
