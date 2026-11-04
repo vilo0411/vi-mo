@@ -4,7 +4,7 @@ import RichText from "./RichText";
 
 type Props = { profile: IndicatorProfile; onMetric?: (id: string) => void };
 
-function Heading({ children }: { children: ReactNode }) {
+export function SectionHeading({ children }: { children: ReactNode }) {
   return <h3 className="text-xs uppercase tracking-wider text-muted mb-1.5">{children}</h3>;
 }
 
@@ -13,13 +13,13 @@ export function CalculationSection({ profile, onMetric }: Props) {
   return (
     <div className="space-y-4 text-sm leading-relaxed">
       <div>
-        <Heading>Điểm dễ hiểu sai</Heading>
+        <SectionHeading>Điểm dễ hiểu sai</SectionHeading>
         <ul className="list-disc pl-4 space-y-2 marker:text-muted">
           {nuances.map((n) => <li key={n}><RichText text={n} onMetric={onMetric} /></li>)}
         </ul>
       </div>
       <div>
-        <Heading>Ví dụ tính</Heading>
+        <SectionHeading>Ví dụ tính</SectionHeading>
         <div className="rounded-lg bg-surface-2 p-3">
           <p className="font-medium">{worked.title}</p>
           <dl className="mt-2 space-y-1">
@@ -41,11 +41,11 @@ export function WhySection({ profile, onMetric }: Props) {
   return (
     <div className="space-y-4 text-sm leading-relaxed">
       <div>
-        <Heading>Vì sao quan trọng</Heading>
+        <SectionHeading>Vì sao quan trọng</SectionHeading>
         <p><RichText text={profile.whyMatters} onMetric={onMetric} /></p>
       </div>
       <div>
-        <Heading>Khi nào dễ đọc sai</Heading>
+        <SectionHeading>Khi nào dễ đọc sai</SectionHeading>
         <p><RichText text={profile.whenMisleading} onMetric={onMetric} /></p>
       </div>
     </div>
@@ -55,7 +55,7 @@ export function WhySection({ profile, onMetric }: Props) {
 function QuestionList({ title, hint, items }: { title: string; hint: string; items: string[] }) {
   return (
     <div>
-      <Heading>{title} <span className="normal-case tracking-normal">· {items.length}</span></Heading>
+      <SectionHeading>{title} <span className="normal-case tracking-normal">· {items.length}</span></SectionHeading>
       <p className="text-xs text-muted -mt-1 mb-1.5">{hint}</p>
       <ul className="list-disc pl-4 space-y-1 marker:text-muted">{items.map((q) => <li key={q}>{q}</li>)}</ul>
     </div>
@@ -67,7 +67,7 @@ export function AnalysisSection({ profile, onMetric }: Props) {
   return (
     <div className="space-y-4 text-sm leading-relaxed">
       <div>
-        <Heading>Chia nhỏ để nhìn rõ</Heading>
+        <SectionHeading>Chia nhỏ để nhìn rõ</SectionHeading>
         <ul className="list-disc pl-4 space-y-2 marker:text-muted">
           {breakdowns.map((b) => (
             <li key={b.by}><b className="font-semibold">{b.by}:</b> <RichText text={b.reveals} onMetric={onMetric} /></li>
