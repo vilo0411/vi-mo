@@ -6,7 +6,7 @@ import { Background, Controls, Handle, MarkerType, Position, ReactFlow, type Edg
 import { INDICATOR_BY_ID } from "@/content/indicators";
 import { flattenTree, TREE_LEVELS, type TreeKind, type TreeNode } from "@/content/trees";
 import { columnX, layoutTree, TREE_CARD } from "@/lib/treeLayout";
-import { latestState } from "./MacroGraph";
+import { AutoFit, latestState } from "./MacroGraph";
 
 type CardData = { node: TreeNode; dim: boolean; selected: boolean };
 type HeaderData = { kind: TreeKind };
@@ -44,6 +44,8 @@ function TreeHeader({ data }: NodeProps<Node<HeaderData>>) {
   const level = TREE_LEVELS[data.kind];
   return (
     <div style={{ width: TREE_CARD.w }} className="border-b-2 border-line pb-1">
+      {/* React Flow chỉ coi nút đã sẵn sàng khi nó có handle, thiếu cái này AutoFit không chạy. */}
+      <Handle type="source" position={Position.Bottom} className="opacity-0" isConnectable={false} />
       <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: KIND_COLOR[data.kind] }}>{level.name}</div>
       <div className="text-xs text-muted">{level.hint}</div>
     </div>
@@ -118,8 +120,6 @@ export default function TreeGraph({ root, active, onPick, onClear }: { root: Tre
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.04 }}
         minZoom={0.25}
         maxZoom={1.4}
         nodesConnectable={false}
@@ -129,6 +129,7 @@ export default function TreeGraph({ root, active, onPick, onClear }: { root: Tre
       >
         <Background color="var(--grid)" gap={20} size={1.2} />
         <Controls showInteractive={false} />
+        <AutoFit ids={nodes.map((n) => n.id)} focus={false} />
       </ReactFlow>
     </div>
   );
