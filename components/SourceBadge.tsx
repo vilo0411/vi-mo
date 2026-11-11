@@ -1,6 +1,6 @@
 import type { Series } from "@/lib/data";
 
-export default function SourceBadge({ series }: { series: Series }) {
+export default function SourceBadge({ series }: { series: Pick<Series, "url" | "source" | "code" | "updatedAt"> }) {
   return (
     <a
       href={series.url}

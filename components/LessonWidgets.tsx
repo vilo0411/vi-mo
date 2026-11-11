@@ -54,7 +54,7 @@ function Bakery() {
   const revenue = loaves * price;
   const nominal = (revenue / 1_000_000 - 1) * 100;
   return (
-    <Card title="Tiệm bánh mì của cả nước" hint="Năm ngoái: 100 ổ bánh, giá 10.000 đ một ổ, 100 người muốn làm thợ. Kéo các thanh để đổi năm nay.">
+    <Card title="Tiệm bánh của cô Ba" hint="Năm ngoái: 100 ổ bánh, giá 10.000 đ một ổ, 100 người muốn làm thợ. Kéo các thanh để đổi năm nay.">
       <div className="grid sm:grid-cols-3 gap-4">
         <Slider label="Số ổ bánh năm nay" value={loaves} min={90} max={115} step={1} onChange={setLoaves} show={`${loaves} ổ`} />
         <Slider label="Giá một ổ năm nay" value={price} min={9500} max={12000} step={100} onChange={setPrice} show={vnd(price)} />
@@ -104,7 +104,7 @@ function GdpSort() {
   const done = i >= SORT_ITEMS.length;
   const item = SORT_ITEMS[i];
   return (
-    <Card title="Trò chơi: tiền này thuộc miếng nào của GDP?" hint="Đọc từng tình huống và chọn đúng miếng bánh pizza.">
+    <Card title="Trò chơi: ai đang mua?" hint="Đọc từng tình huống và xếp khoản tiền vào đúng nhóm của GDP.">
       {done ? (
         <div className="space-y-3">
           <p className="text-lg font-medium">
@@ -305,24 +305,24 @@ function ClassFund() {
 }
 
 /** Bài 6: tiền tăng nhanh hơn hàng thì giá tăng. */
-function MoneyGoods() {
+function MoneyGoods({ item = "quả táo", place = "chợ", title = "Cái chợ táo" }: { item?: string; place?: string; title?: string }) {
   const [money, setMoney] = useState(100);
   const [apples, setApples] = useState(10);
   const price = (money * 1000) / apples;
   const change = (price / 10000 - 1) * 100;
   return (
-    <Card title="Cái chợ táo" hint="Lúc đầu chợ có 10 quả táo và 100.000 đ, mỗi quả khoảng 10.000 đ.">
+    <Card title={title} hint={`Lúc đầu ${place} có 10 ${item} và 100.000 đ, mỗi ${item} khoảng 10.000 đ.`}>
       <div className="grid sm:grid-cols-2 gap-4">
-        <Slider label="Tổng tiền cả chợ có" value={money} min={50} max={250} step={10} onChange={setMoney} show={`${(money * 1000).toLocaleString("vi-VN")} đ`} />
-        <Slider label="Số táo làm ra" value={apples} min={5} max={20} step={1} onChange={setApples} show={`${apples} quả`} />
+        <Slider label={`Tổng tiền cả ${place} có`} value={money} min={50} max={250} step={10} onChange={setMoney} show={`${(money * 1000).toLocaleString("vi-VN")} đ`} />
+        <Slider label={`Số ${item} làm ra`} value={apples} min={5} max={20} step={1} onChange={setApples} show={`${apples} ${item}`} />
       </div>
-      <div className="flex flex-wrap gap-1.5 text-2xl" aria-label={`${apples} quả táo`}>
+      <div className="flex flex-wrap gap-1.5 text-2xl" aria-label={`${apples} ${item}`}>
         {Array.from({ length: apples }, (_, i) => (
           <span key={i} className="w-6 h-6 rounded-full inline-block" style={{ background: "var(--down)" }} />
         ))}
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
-        <Stat label="Giá một quả táo" value={vnd(price)} />
+        <Stat label={`Giá một ${item}`} value={vnd(price)} />
         <Stat label="Giá thay đổi" value={pct(change, 0)} tone={change > 5 ? "down" : change < -5 ? "up" : "neutral"} note={change > 0 ? "Tiền tăng nhanh hơn hàng: lạm phát" : change < 0 ? "Hàng tăng nhanh hơn tiền: giá giảm" : "Tiền và hàng tăng ngang nhau"} />
       </div>
       <p className="text-sm text-muted leading-relaxed">Đây là phiên bản rất đơn giản. Ngoài đời còn có tốc độ tiền quay vòng, kỳ vọng và giá nhập khẩu, nhưng ý chính vẫn đúng: tiền tăng nhanh hơn hàng nhiều năm liền thì giá cả sẽ tăng.</p>
@@ -338,7 +338,7 @@ export default function LessonWidget({ id }: { id: WidgetId }) {
       return <GdpSort />;
     case "contributions":
       return (
-        <Card title="Tăng trưởng GDP thật được ghép từ đâu?" hint="Mỗi cột là tốc độ tăng GDP của một năm, tách thành phần đóng góp của từng miếng bánh. Đường chấm tròn là tăng trưởng thật.">
+        <Card title="Tăng trưởng GDP thật được ghép từ đâu?" hint="Mỗi cột là tốc độ tăng GDP của một năm, tách thành phần đóng góp của từng nhóm người mua. Đường chấm tròn là tăng trưởng thật.">
           <ContributionChart from={2010} />
         </Card>
       );
@@ -352,5 +352,7 @@ export default function LessonWidget({ id }: { id: WidgetId }) {
       return <ClassFund />;
     case "money-goods":
       return <MoneyGoods />;
+    case "money-bread":
+      return <MoneyGoods item="ổ bánh" place="phố" title="Cuộc đua giữa tiền và bánh" />;
   }
 }

@@ -6,8 +6,12 @@ import { formatReal, type FireRule } from "@/lib/game";
 import { resetHints } from "./Hint";
 import SpeakButton from "./Speak";
 import { useProgress } from "@/lib/progress";
+import { STREET } from "@/content/world";
 import { isUnlocked, scenarioXp, starsMissing } from "@/lib/rewards";
 import { Stars } from "../ScenarioList";
+import Link from "next/link";
+import { LESSONS } from "@/content/lessons";
+import { CAPITAL_START } from "@/lib/game";
 
 const BRIEF_ROWS: { id: string; why: string }[] = [
   { id: "gdp_growth", why: "Nền kinh tế lớn nhanh hay chậm. Giảm mạnh nghĩa là doanh nghiệp đóng cửa, người lao động mất việc." },
@@ -28,6 +32,8 @@ export default function Briefing({ scenario, rules, onStart }: { scenario: Scena
   const { progress, loaded } = useProgress();
   const missing = loaded && !isUnlocked(scenario, progress) ? starsMissing(scenario.level, progress) : 0;
   const stars = progress.stars[scenario.id] ?? 0;
+  const prep = LESSONS.filter((l) => scenario.lessons?.includes(l.slug));
+  const losses = progress.losses[scenario.id] ?? 0;
   return (
     <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-6 max-w-6xl">
       <div className="space-y-5">
@@ -80,7 +86,17 @@ export default function Briefing({ scenario, rules, onStart }: { scenario: Scena
         </div>
         <div className="bg-surface border border-line rounded-xl p-5 space-y-2 text-sm">
           <h2 className="font-semibold">Luật chơi</h2>
-          <ol className="list-decimal pl-5 space-y-1.5 leading-relaxed">
+          {scenario.street ? (
+            <ol className="list-decimal pl-5 space-y-1.5 leading-relaxed">
+              <li>Mỗi năm có một sự kiện. Bạn nghe hai cố vấn cãi nhau, rồi tự quyết định. Cả hai đều có thể sai.</li>
+              <li>Không có con số báo trước. Sau khi chọn, bạn đoán chỉ số sẽ đi đâu, rồi mới được xem chuyện gì xảy ra.</li>
+              <li>Bạn có {CAPITAL_START} vốn chính trị. Quyết định khó tốn vốn. Đoán đúng được thêm 1, để mục tiêu trượt xa mất 1.</li>
+              <li>Tương lai chưa ngã ngũ: mỗi lượt chơi, cú sốc có thể đi theo hướng khác.</li>
+              <li>Quyết định của bạn rơi xuống đầu những người ở {STREET}, và họ sẽ nhắn cho bạn.</li>
+              <li>Kết thúc nhiệm kỳ, bạn xem chuyện gì xảy ra một năm sau, so với chuyên gia và với thực tế.</li>
+            </ol>
+          ) : (
+            <ol className="list-decimal pl-5 space-y-1.5 leading-relaxed">
             <li>Mỗi năm có một sự kiện. Bạn chọn một trong ba phương án dựng sẵn, hoặc tự đặt con số: thay đổi lãi suất, chi tiêu công, bán đô la từ dự trữ.</li>
             <li>Mỗi phương án ghi rõ con số nó thay đổi, ví dụ &ldquo;Lãi suất điều hành 4,0% → 5,5%&rdquo;.</li>
             <li>Sau khi chọn, bạn tự bấm để đi qua từng quý. Mỗi quý giải thích chỉ số nào vừa đổi, đổi bao nhiêu, và đó là do sự kiện trong câu chuyện hay do lựa chọn nào của bạn. Bản đồ bên phải hiện dần những chỉ số bị ảnh hưởng: thẻ có nhãn xanh là chỗ quyết định của bạn tác động vào, nhãn tím là sự kiện.</li>
@@ -89,6 +105,7 @@ export default function Briefing({ scenario, rules, onStart }: { scenario: Scena
             <li>Không chắc thì hỏi cố vấn. Tự quyết mà vẫn đạt 3 sao thì được huy hiệu &ldquo;Tự lực&rdquo;.</li>
             <li>Kết thúc nhiệm kỳ, bạn nhận điểm, số sao, so với chuyên gia, làm quiz ngắn và xem thực tế đã diễn ra thế nào.</li>
           </ol>
+          )}
           {rules.length > 0 && (
             <div className="rounded-lg p-3 text-xs leading-relaxed" style={{ background: "var(--surface-2)" }}>
               <div className="font-medium text-sm mb-1" style={{ color: "var(--down)" }}>
@@ -126,6 +143,20 @@ export default function Briefing({ scenario, rules, onStart }: { scenario: Scena
             🔒 Theo bản đồ chiến dịch, chặng này cần thêm {missing} sao mới mở. Bạn vẫn có thể chơi thử ngay.
           </p>
         )}
+        {prep.length > 0 && (
+          <div className="bg-surface border border-line rounded-xl p-5 space-y-2 text-sm">
+            <h2 className="font-semibold">Nên học trước</h2>
+            <ul className="space-y-1">
+              {prep.map((l) => (
+                <li key={l.slug} className="flex gap-2">
+                  <span style={{ color: progress.lessons[l.slug] ? "var(--up)" : "var(--muted)" }}>{progress.lessons[l.slug] ? "✓" : "○"}</span>
+                  <Link href={`/lo-trinh/${l.slug}`} className="hover:text-accent">{l.title}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {losses > 0 && <p className="text-xs text-muted">Bạn đã mất ghế {losses} lần ở thử thách này.</p>}
         <button type="button" onClick={onStart} className="w-full px-4 py-3 rounded-xl bg-accent text-white font-medium">
           Nhận nhiệm vụ
         </button>

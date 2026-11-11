@@ -1,4 +1,5 @@
 import type { Choice, Scenario } from "@/content/scenarios";
+import { CAST_BY_ID, type Voice } from "@/content/world";
 import { INDICATOR_BY_ID } from "@/content/indicators";
 import { describeShock, GUIDANCE, guidanceShocks, type Guidance, type QuarterNote } from "./game";
 import { chainSentence, choiceEffects, dirWord, lowerFirst, plainOf, ruleText, type WhyStep } from "./why";
@@ -175,8 +176,14 @@ export function narrateQuarter(
 }
 
 /** Lời kể tổng kết năm: được bao nhiêu, mất bao nhiêu, và vì sao. */
-export function narrateYear(year: number, goods: number, bads: number, trust0: number, trust1: number, feedback: string, next: string): string {
+export function narrateYear(year: number, goods: number, bads: number, trust0: number, trust1: number, feedback: string, next: string, street?: { voices: string }): string {
   const mood = goods > bads ? "Nhìn chung, năm nay bạn đi đúng hướng nhiều hơn." : goods < bads ? "Năm nay cái giá khá đắt." : "Năm nay được mất ngang nhau.";
   const trust = trust1 > trust0 ? `Tín nhiệm của bạn tăng từ ${trust0} lên ${trust1}.` : trust1 < trust0 ? `Tín nhiệm của bạn giảm từ ${trust0} xuống ${trust1}.` : `Tín nhiệm giữ ở mức ${trust1}.`;
+  if (street) return [`Một năm đã qua. ${mood}`, street.voices, feedback, next].filter(Boolean).join(" ");
   return `Tổng kết năm ${year}. ${mood} ${goods} chỉ số tốt lên, ${bads} chỉ số xấu đi. ${trust} Vì sao vậy? ${feedback} ${next}`;
+}
+
+/** Đọc tin nhắn từ phố như người dẫn chuyện. */
+export function narrateVoices(voices: Voice[]): string {
+  return voices.map((v) => `${CAST_BY_ID[v.by].name} nhắn cho bạn: ${v.text}`).join(" ");
 }

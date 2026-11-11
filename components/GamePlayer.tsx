@@ -9,6 +9,8 @@ import {
   allPlaythroughs,
   attribute,
   averageValues,
+  capitalNow,
+  capitalYears,
   checkFired,
   CUSTOM,
   describeShock,
@@ -19,18 +21,24 @@ import {
   formatReal,
   GUIDANCE,
   guidanceShocks,
+  lastYearValues,
   talkPreview,
   nearestChoice,
+  pickVariant,
+  resolveVariant,
   ROUND_PERIODS,
   runGame,
   score,
   storyFor,
+  type Direction,
   type Guidance,
   type Step,
 } from "@/lib/game";
 import { bestContinuation, expertPath, stepLabels, taylorAdvice } from "@/lib/advisor";
 import { buildQuiz } from "@/lib/quiz";
-import { narrateChoice, narrateEvent, narrateQuarter, whySeen } from "@/lib/narration";
+import { narrateChoice, narrateEvent, narrateQuarter, narrateVoices, whySeen } from "@/lib/narration";
+import { streetEndings, streetVoices } from "@/lib/world";
+import { LESSONS } from "@/content/lessons";
 import { useProgress, type Reward } from "@/lib/progress";
 import AdvisorPanel from "./game/AdvisorPanel";
 import Briefing from "./game/Briefing";
@@ -46,6 +54,10 @@ import QuarterPanel from "./game/QuarterPanel";
 import { Confetti, CountUp, PopStars, RewardPanel } from "./game/ResultFx";
 import YearSummary, { yearNarration } from "./game/YearSummary";
 import EffectList from "./game/EffectList";
+import DebatePanel from "./game/DebatePanel";
+import Epilogue, { directionWord } from "./game/Epilogue";
+import PredictPanel from "./game/PredictPanel";
+import StreetFeed from "./game/StreetFeed";
 import SpeakButton, { VoiceBar } from "./game/Speak";
 import { prefetch } from "@/lib/speech";
 
@@ -54,15 +66,16 @@ const LETTERS = ["A", "B", "C", "D"];
 /** Lựa chọn của một bước, kể cả khi người chơi tự đặt con số. */
 /** Lời kể đầu năm: câu chuyện, sự kiện là gì và sẽ kéo nền kinh tế đi đâu, câu hỏi và các phương án. */
 function storyNarration(round: Round, story: string[], idx: number, withChoices: boolean) {
+  const debate = round.debate ? [`Cố vấn Hùng nói: ${round.debate.hung}`, `Cố vấn Lan thì nói: ${round.debate.lan}`] : [narrateEvent(round.event)];
   return [
     `Năm ${idx + 1}. ${round.title}.`,
     ...story.map((p, k) => (k > 0 ? `Hậu quả từ năm trước: ${p}` : p)),
-    ...(withChoices ? [narrateEvent(round.event), round.question, ...round.choices.map((c, k) => `Phương án ${LETTERS[k]}: ${c.label}. ${c.detail}`)] : []),
+    ...(withChoices ? [...debate, round.question, ...round.choices.map((c, k) => `Phương án ${LETTERS[k]}: ${c.label}. ${c.detail}`)] : []),
   ].join(" ");
 }
 
-const firedOutro = (label: string) =>
-  `Và rồi điều tồi tệ nhất đã đến: ${label.toLowerCase()} hai quý liền. Quốc hội và thị trường mất kiên nhẫn, bạn bị cách chức. Nhiệm kỳ dừng ở đây.`;
+const firedOutro = (label: string, street?: string) =>
+  `Hai quý liền ${label.toLowerCase()}. Sáng hôm sau, quyết định cách chức được đặt lên bàn của bạn. ${street ?? ""}`.trim();
 
 function choiceOf(scenario: Scenario, step: Step): Choice {
   const round = scenario.rounds[step.roundId];
@@ -74,12 +87,19 @@ function choiceOf(scenario: Scenario, step: Step): Choice {
     detail: "",
     shocks: step.custom ?? [],
     next: step.next,
+    aftermath: near.aftermath,
     feedback: `Lựa chọn của bạn gần nhất với phương án "${near.label}". ${near.feedback}`,
   };
 }
 
-export default function GamePlayer({ scenario }: { scenario: Scenario }) {
+export default function GamePlayer({ scenario: base }: { scenario: Scenario }) {
   const [started, setStarted] = useState(false);
+  // Diễn biến của lượt này, rút khi nhận nhiệm vụ. Người chơi chỉ biết khi sang năm đó.
+  const [variantId, setVariantId] = useState<string | undefined>();
+  const scenario = useMemo(() => resolveVariant(base, variantId), [base, variantId]);
+  // Phương án vừa bấm, đang chờ người chơi đoán trước khi xem kết quả.
+  const [pending, setPending] = useState<{ choiceId: string; custom?: Step["custom"]; label: string } | null>(null);
+  const [customBlocked, setCustomBlocked] = useState(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [revealed, setRevealed] = useState(false);
   // Kỳ đang chiếu khi tua từng quý sau mỗi lựa chọn; null là đứng yên.
@@ -87,7 +107,7 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
   // Kỳ người chơi chọn xem lại sau khi đã tua xong năm; null là xem cuối năm.
   const [reviewT, setReviewT] = useState<number | null>(null);
 
-  const { recordRun, recordQuiz, progress } = useProgress();
+  const { recordRun, recordLoss, recordQuiz, progress } = useProgress();
   // Hướng dẫn chỉ hiện cho người chưa hoàn thành nhiệm kỳ nào.
   const newbie = Object.keys(progress.stars).length === 0;
   const [guidance, setGuidance] = useState<Guidance>("neutral");
@@ -114,12 +134,15 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
   const roundIndex = revealed ? steps.length - 1 : steps.length;
   const roundStart = roundIndex * ROUND_PERIODS;
 
-  const { result, periods } = useMemo(() => runGame(scenario, steps), [scenario, steps]);
+  // Ở kịch bản phố, chuyện năm sau chỉ lộ ra khi người chơi thật sự sang năm đó.
+  const holdYear = scenario.street && revealed && lastChoice?.next ? steps.length : undefined;
+  const { result, periods } = useMemo(() => runGame(scenario, steps, holdYear), [scenario, steps, holdYear]);
   // Trước khi chọn: thấy sự kiện vừa xảy ra. Sau khi chọn: tua hết năm đó.
   const tTarget = revealed ? Math.min(periods, roundStart + ROUND_PERIODS) : roundStart;
   const tView = animT ?? reviewT ?? tTarget;
   const final = useMemo(() => (ended ? finalResult(scenario, result, periods) : null), [ended, scenario, result, periods]);
-  const story = round ? storyFor(round, result, roundStart) : [];
+  const prevStep = roundIndex > 0 ? steps[roundIndex - 1] : undefined;
+  const story = round ? storyFor(round, result, roundStart, prevStep && choiceOf(scenario, prevStep).aftermath?.story) : [];
   const quiz = useMemo(() => (final ? buildQuiz(scenario, steps) : []), [final, scenario, steps]);
 
   // Tín nhiệm: điểm tạm tính theo cùng công thức chấm cuối nhiệm kỳ, cập nhật từng quý.
@@ -147,7 +170,7 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
   };
 
   // Tách kết quả theo nguồn: sự kiện của từng năm và lựa chọn của bạn.
-  const att = useMemo(() => attribute(scenario, steps), [scenario, steps]);
+  const att = useMemo(() => attribute(scenario, steps, holdYear), [scenario, steps, holdYear]);
   const notes = useMemo(() => (revealed ? explainQuarter(scenario, att, result, tView) : []), [revealed, scenario, att, result, tView]);
   // Công cụ đã dùng ở các năm trước: lời kể không định nghĩa lại.
   const knownTools = useMemo(
@@ -169,7 +192,7 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
         last: roundStart + q >= tTarget,
         year: roundIndex + 1,
         seen: whySeen(all.slice(0, q)),
-        outro: fired && roundStart + q >= fired.t ? firedOutro(fired.rule.label) : undefined,
+        outro: fired && roundStart + q >= fired.t ? firedOutro(fired.rule.label, scenario.firedStreet?.[fired.rule.node]) : undefined,
       }),
     );
   }, [revealed, steps, scenario, roundIndex, knownTools, tTarget, roundStart, att, result, fired]);
@@ -192,17 +215,44 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
   const before = useMemo(() => (revealed ? runGame(scenario, steps.slice(0, -1)).result : null), [revealed, scenario, steps]);
   const attBefore = useMemo(() => (revealed ? attribute(scenario, steps.slice(0, -1)) : null), [revealed, scenario, steps]);
 
-  const choose = (choiceId: string, custom?: Step["custom"]) => {
+  // Vốn chỉ thay đổi khi cả năm đã kể xong, để không lộ kết quả dự đoán giữa chừng.
+  const street = !!scenario.street;
+  const settled = useMemo(() => (revealed && animT !== null ? steps.slice(0, -1) : steps), [revealed, animT, steps]);
+  const capital = useMemo(() => (street ? capitalNow(scenario, settled) : undefined), [street, scenario, settled]);
+  const yearCapital = useMemo(() => (street && revealed && animT === null ? capitalYears(scenario, steps).at(-1) : undefined), [street, revealed, animT, scenario, steps]);
+  const voices = useMemo(
+    () => (street && revealed && before ? streetVoices(before, roundStart, result, Math.min(periods, roundStart + ROUND_PERIODS), lastChoice) : []),
+    [street, revealed, before, roundStart, result, periods, lastChoice],
+  );
+  const endings = useMemo(() => (final ? streetEndings(scenario, lastYearValues(result, periods)) : []), [final, scenario, result, periods]);
+  const firedStreet = fired ? scenario.firedStreet?.[fired.rule.node] : undefined;
+  const lossSaved = useRef(false);
+  useEffect(() => {
+    if (!firedNow || lossSaved.current) return;
+    lossSaved.current = true;
+    recordLoss(scenario.id);
+  }, [firedNow, recordLoss, scenario.id]);
+
+  // Chọn ở kịch bản có phần đoán thì dừng lại đoán trước; kịch bản khác đi thẳng.
+  const pick = (choiceId: string, label: string, custom?: Step["custom"]) => {
+    if (round?.predict) setPending({ choiceId, label, custom });
+    else choose(choiceId, custom);
+  };
+  const costOf = (shocks: Step["custom"]) => (round ? (nearestChoice(round, shocks ?? []).cost ?? 0) : 0);
+
+  const choose = (choiceId: string, custom?: Step["custom"], guess?: Direction) => {
     if (!round) return;
-    const base: Step = custom ? { roundId: round.id, choiceId: CUSTOM, custom, next: nearestChoice(round, custom).next } : { roundId: round.id, choiceId };
-    const step: Step = { ...base, guidance, advised: !!advice };
+    setPending(null);
+    setCustomBlocked(false);
+    const baseStep: Step = custom ? { roundId: round.id, choiceId: CUSTOM, custom, next: nearestChoice(round, custom).next } : { roundId: round.id, choiceId };
+    const step: Step = { ...baseStep, guidance, advised: !!advice, guess };
     const nextSteps = [...steps, step];
     setSteps(nextSteps);
     setRevealed(true);
     setAnimT(roundStart);
     setReviewT(null);
     setAdvice(null);
-    const { result: r, periods: n } = runGame(scenario, nextSteps);
+    const { result: r, periods: n } = runGame(scenario, nextSteps, scenario.street && choiceOf(scenario, step).next ? nextSteps.length : undefined);
     const f0 = checkFired(scenario, r, Math.min(n, roundStart + ROUND_PERIODS), rules);
     setFired(f0);
     if (!f0 && !choiceOf(scenario, step).next) {
@@ -216,6 +266,7 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
         soldReserves: nextSteps.some((x) => choiceOf(scenario, x).shocks.some((sh) => sh.node === "reserves" && sh.size < 0)),
         usedAdvisor: nextSteps.some((x) => x.advised),
         talkConsistent: talks.length > 0 && talks.every((x) => guidanceShocks(x.guidance, choiceOf(scenario, x).shocks).consistent),
+        allGuessed: street ? capitalYears(scenario, nextSteps).every((y) => y.guessed) : undefined,
       };
     }
   };
@@ -234,6 +285,9 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
   };
   const restart = () => {
     setStarted(false);
+    setVariantId(undefined);
+    setPending(null);
+    lossSaved.current = false;
     setSteps([]);
     setRevealed(false);
     setAnimT(null);
@@ -246,6 +300,7 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
   };
 
   const playing = animT !== null;
+  const variantLabel = base.variants?.find((v) => v.id === variantId)?.label;
 
   const yearNext =
     ended && final
@@ -253,10 +308,11 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
       : `Bấm sang năm ${roundIndex + 2} để nghe tiếp câu chuyện.`;
 
   // Vừa chọn xong: tải trước giọng đọc cho mọi quý của năm, bảng tổng kết năm, và câu chuyện năm sau.
-  const yearText = revealed && before && lastChoice ? yearNarration(scenario, roundIndex + 1, before, result, roundStart, Math.min(periods, roundStart + ROUND_PERIODS), lastChoice.feedback, yearNext) : "";
+  const voicesText = narrateVoices(voices);
+  const yearText = revealed && before && lastChoice ? yearNarration(scenario, roundIndex + 1, before, result, roundStart, Math.min(periods, roundStart + ROUND_PERIODS), lastChoice.feedback, yearNext, voicesText) : "";
   const nextRoundId = revealed && !fired ? lastChoice?.next : undefined;
   const nextStoryText = nextRoundId
-    ? storyNarration(scenario.rounds[nextRoundId], storyFor(scenario.rounds[nextRoundId], result, (roundIndex + 1) * ROUND_PERIODS), roundIndex + 1, true)
+    ? storyNarration(scenario.rounds[nextRoundId], storyFor(scenario.rounds[nextRoundId], result, (roundIndex + 1) * ROUND_PERIODS, lastChoice?.aftermath?.story), roundIndex + 1, true)
     : "";
   // Chưa vào chơi: tải trước câu chuyện năm đầu, bấm "Bắt đầu" là nghe ngay.
   const firstStoryText = !started && round ? storyNarration(round, story, 0, true) : "";
@@ -265,7 +321,16 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
     if (ahead) prefetch(ahead.split("\u0000"));
   }, [ahead]);
 
-  if (!started) return <Briefing scenario={scenario} rules={rules} onStart={() => setStarted(true)} />;
+  if (!started) return (
+      <Briefing
+        scenario={scenario}
+        rules={rules}
+        onStart={() => {
+          setVariantId(pickVariant(base, Math.random()));
+          setStarted(true);
+        }}
+      />
+    );
 
   return (
     <div className="space-y-5">
@@ -315,7 +380,7 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
                   {p}
                 </p>
               ))}
-              {!revealed && <EffectList shocks={round.event} title="Nếu bạn không làm gì, theo quy luật cú sốc này sẽ:" />}
+              {!revealed && !street && <EffectList shocks={round.event} title="Nếu bạn không làm gì, theo quy luật cú sốc này sẽ:" />}
             </div>
           )}
 
@@ -329,17 +394,22 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
             <div className="space-y-2">
               <h3 className="font-medium">{round.question}</h3>
               <Hint id="choices" title="Chọn một phương án" enabled={newbie}>
-                Mỗi phương án ghi rõ con số nó thay đổi. Không chắc thì bấm &ldquo;Hỏi cố vấn&rdquo;. Bạn cũng có thể chọn giọng phát ngôn: lời nói cũng tác động lên thị trường.
+                {street
+                  ? "Hai cố vấn có lý riêng và đều có thể sai. Bạn tự quyết định, rồi đoán kết quả trước khi xem. Bạn cũng có thể chọn giọng phát ngôn: lời nói cũng tác động lên thị trường."
+                  : <>Mỗi phương án ghi rõ con số nó thay đổi. Không chắc thì bấm &ldquo;Hỏi cố vấn&rdquo;. Bạn cũng có thể chọn giọng phát ngôn: lời nói cũng tác động lên thị trường.</>}
               </Hint>
-              <div className="flex flex-wrap gap-2">
+              {round.debate && <DebatePanel debate={round.debate} />}
+              <div className={`flex flex-wrap gap-2 ${street ? "hidden" : ""}`}>
                 <button type="button" onClick={askAdvisor} disabled={!!advice} className="px-3 py-1.5 rounded-lg border border-line text-sm hover:border-accent disabled:opacity-60">
                   🧑‍💼 Hỏi cố vấn
                 </button>
               </div>
               {advice && <AdvisorPanel advice={advice.taylor} pick={advice.pick} onClose={() => setAdvice(null)} />}
               <GuidancePicker value={guidance} onChange={setGuidance} />
-              {round.choices.map((c, k) => {
-                const talk = talkPreview(guidance, c.shocks);
+              {!pending && round.choices.map((c, k) => {
+                const talk = street ? null : talkPreview(guidance, c.shocks);
+                const cost = c.cost ?? 0;
+                const locked = capital !== undefined && cost > capital;
                 const clash = talk ? !talk.consistent : false;
                 const tip = advice?.pick?.id === c.id;
                 return (
@@ -348,12 +418,18 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
                   className="bg-surface border border-line rounded-xl hover:border-accent transition-colors"
                   style={tip ? { borderColor: "var(--chart-3)", boxShadow: "0 0 0 2px var(--chart-3)" } : undefined}
                 >
-                <button type="button" onClick={() => choose(c.id)} className="w-full text-left p-4 pb-2 flex gap-3">
+                <button type="button" disabled={locked} onClick={() => pick(c.id, c.label)} className={`w-full text-left p-4 pb-2 flex gap-3 ${locked ? "opacity-50 cursor-not-allowed" : ""}`}>
                   <span className="w-7 h-7 shrink-0 rounded-full bg-surface-2 flex items-center justify-center text-sm font-semibold">{LETTERS[k]}</span>
                   <span>
                     <span className="font-medium block">{c.label}</span>
                     <span className="text-sm text-muted block mt-0.5">{c.detail}</span>
-                    {c.shocks.length > 0 && (
+                    {street && (
+                      <span className="block mt-1.5 text-xs text-muted">
+                        {cost > 0 ? `Tốn ${cost} vốn chính trị` : "Không tốn vốn"}
+                        {locked && `. Bạn chỉ còn ${capital}, chưa đủ để làm việc này`}
+                      </span>
+                    )}
+                    {!street && c.shocks.length > 0 && (
                       <span className="block mt-1.5 space-y-0.5">
                         {c.shocks.map((sh, j) => (
                           <span key={j} className="block text-xs tabular-nums text-accent">
@@ -372,13 +448,24 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
                     )}
                   </span>
                 </button>
-                <div className="px-4 pb-4 pl-14">
-                  <EffectList shocks={c.shocks} title="Theo quy luật, nếu chỉ tính riêng phương án này:" />
+                <div className={street ? "pb-2" : "px-4 pb-4 pl-14"}>
+                  {!street && <EffectList shocks={c.shocks} title="Theo quy luật, nếu chỉ tính riêng phương án này:" />}
                 </div>
                 </div>
                 );
               })}
-              <CustomChoice scenario={scenario} onSubmit={(shocks) => choose(CUSTOM, shocks)} />
+              {pending && round.predict && (
+                <PredictPanel label={pending.label} q={round.predict.q} onBack={() => setPending(null)} onGuess={(g) => choose(pending.choiceId, pending.custom, g)} />
+              )}
+              <CustomChoice
+                scenario={scenario}
+                onSubmit={(shocks) => {
+                  const short = capital !== undefined && costOf(shocks) > capital;
+                  setCustomBlocked(short);
+                  if (!short) pick(CUSTOM, "Tự đặt con số", shocks);
+                }}
+              />
+              {customBlocked && <p className="text-sm" style={{ color: "var(--down)" }}>Bộ con số này giống một phương án bạn chưa đủ vốn chính trị để làm.</p>}
             </div>
           )}
 
@@ -419,7 +506,7 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
           )}
 
           {firedNow && fired && (
-            <FiredPanel rule={fired.rule} real={fired.real} year={roundIndex + 1} quarter={fired.t - roundStart}>
+            <FiredPanel rule={fired.rule} real={fired.real} year={roundIndex + 1} quarter={fired.t - roundStart} street={firedStreet}>
               <p className="text-sm text-muted">
                 Chuyên gia chơi kịch bản này được {expert.points} điểm với: {stepLabels(scenario, expert.steps).join(" → ")}.
               </p>
@@ -446,6 +533,15 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
               t1={Math.min(periods, roundStart + ROUND_PERIODS)}
               feedback={lastChoice.feedback}
               next={yearNext}
+              voicesText={voicesText}
+              street={
+                street && (
+                  <>
+                    {yearCapital && <GuessResult year={yearCapital} steps={steps} predict={round?.predict} />}
+                    <StreetFeed voices={voices} />
+                  </>
+                )
+              }
               reviewQ={reviewT === null ? null : reviewT - roundStart}
               onReview={(q) => setReviewT(q === null ? null : roundStart + q)}
               onReplay={() => {
@@ -473,6 +569,8 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
                 <div className="text-sm font-medium mt-1">{verdict(final.stars, final.allMet)}</div>
               </div>
               {final.stars === 3 && <Confetti />}
+              <Epilogue final={final} voices={endings} scenario={scenario} />
+              {street && variantLabel && <p className="text-sm text-muted">Lần này tương lai đi theo hướng: {variantLabel.toLowerCase()}. Chơi lại có thể khác.</p>}
               {reward && <RewardPanel reward={reward} />}
               <ExpertCompare
                 scenario={scenario}
@@ -524,12 +622,33 @@ export default function GamePlayer({ scenario }: { scenario: Scenario }) {
         </div>
 
         <div className="space-y-4 min-w-0">
-          <Hint id="board" title="Tín nhiệm, ngưỡng cách chức và bản đồ" enabled={newbie}>
-            Thanh Tín nhiệm là điểm tạm tính: trên 70 là đang hướng tới 3 sao. Dưới mỗi chỉ số có ngưỡng cách chức: vượt 2 quý liền là mất ghế. Bản đồ cho thấy tác động lan qua các mũi tên.
+          <Hint id={street ? "board-street" : "board"} title={street ? "Vốn, ngưỡng cách chức và bản đồ" : "Tín nhiệm, ngưỡng cách chức và bản đồ"} enabled={newbie}>
+            {street ? "Vốn chính trị quyết định bạn được làm việc khó nào." : "Thanh Tín nhiệm là điểm tạm tính: trên 70 là đang hướng tới 3 sao."} Dưới mỗi chỉ số có ngưỡng cách chức: vượt 2 quý liền là mất ghế. Bản đồ cho thấy tác động lan qua các mũi tên.
           </Hint>
-          <EconomyBoard scenario={scenario} result={result} tView={tView} trust={trust} round={round} myShocks={lastChoice?.shocks} rules={rules} />
+          <EconomyBoard scenario={scenario} result={result} tView={tView} trust={trust} capital={capital} round={round} myShocks={lastChoice?.shocks} rules={rules} />
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Kết quả dự đoán của năm vừa qua và thay đổi vốn chính trị. */
+function GuessResult({ year, steps, predict }: { year: ReturnType<typeof capitalYears>[number]; steps: Step[]; predict?: Round["predict"] }) {
+  const guess = steps[year.year - 1]?.guess;
+  if (!predict || !guess || !year.truth) return null;
+  const lesson = LESSONS.find((l) => l.slug === predict.lesson);
+  return (
+    <div className="rounded-lg bg-surface-2 p-3 text-sm leading-relaxed">
+      <b className="font-medium" style={{ color: year.guessed ? "var(--up)" : "var(--down)" }}>
+        {year.guessed ? "Bạn đoán đúng, được thêm 1 vốn. " : "Bạn đoán chưa đúng. "}
+      </b>
+      {INDICATOR_BY_ID[predict.node].name} {directionWord[year.truth]}, bạn đoán {directionWord[guess]}.
+      {year.slipped && " Mục tiêu đang trượt xa nên bạn mất 1 vốn."}
+      {!year.guessed && lesson && (
+        <>
+          {" "}Ôn lại: <Link href={`/lo-trinh/${lesson.slug}`} className="text-accent underline decoration-dotted underline-offset-2">{lesson.title}</Link>.
+        </>
+      )}
     </div>
   );
 }

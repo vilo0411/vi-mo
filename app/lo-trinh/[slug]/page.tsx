@@ -7,6 +7,9 @@ import { formatValue, getSeries, latest } from "@/lib/data";
 import LessonQuiz from "@/components/LessonQuiz";
 import LessonWidget from "@/components/LessonWidgets";
 import { FEYNMAN } from "@/content/feynman";
+import RichText from "@/components/RichText";
+import LessonBeats from "@/components/lesson/LessonBeats";
+import { LessonMap } from "@/components/lesson/GrowingMap";
 
 export function generateStaticParams() {
   return LESSONS.map((l) => ({ slug: l.slug }));
@@ -34,6 +37,53 @@ async function LessonContent({ params }: { params: Promise<{ slug: string }> }) 
   const widgets = feynman?.widgets ?? [];
   const next = LESSONS[idx + 1];
 
+  if (lesson.beats) {
+    return (
+      <div className="max-w-3xl space-y-8">
+        <div>
+          <Link href="/lo-trinh" className="text-sm text-muted hover:text-text">← Lộ trình</Link>
+          <div className="text-sm text-muted mt-3">
+            Phố Cầu Tre · Tập {idx + 1} · khoảng {lesson.minutes} phút
+          </div>
+          <h1 className="text-2xl font-semibold">{lesson.title}</h1>
+          <p className="text-lg text-muted mt-1">{lesson.question}</p>
+          {lesson.recap && <p className="text-sm text-muted italic mt-3">{lesson.recap}</p>}
+        </div>
+
+        <LessonBeats slug={lesson.slug} beats={lesson.beats}>
+          <LessonMap slug={lesson.slug} />
+          <section>
+            <h2 className="text-lg font-semibold mb-3">Thử xem đã chắc chưa</h2>
+            <LessonQuiz slug={lesson.slug} quiz={lesson.quiz} />
+          </section>
+          <section className="space-y-4 border-t border-line pt-6">
+            {lesson.hook && (
+              <p className="text-lg font-medium leading-relaxed">
+                <RichText text={lesson.hook} />
+              </p>
+            )}
+            <div className="flex flex-wrap gap-3">
+              {lesson.boss ? (
+                <Link href={lesson.boss.href} className="px-4 py-2 rounded-lg bg-accent text-white">
+                  {lesson.boss.label} →
+                </Link>
+              ) : (
+                next && (
+                  <Link href={`/lo-trinh/${next.slug}`} className="px-4 py-2 rounded-lg bg-accent text-white">
+                    Tập {idx + 2}: {next.title} →
+                  </Link>
+                )
+              )}
+              <Link href={lesson.tryIt.href} className="px-4 py-2 rounded-lg border border-accent text-accent">
+                {lesson.tryIt.label}
+              </Link>
+            </div>
+          </section>
+        </LessonBeats>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl space-y-8">
       <div>
@@ -60,7 +110,7 @@ async function LessonContent({ params }: { params: Promise<{ slug: string }> }) 
       <section>
         <h2 className="text-lg font-semibold mb-3">Ý chính, nói kỹ hơn</h2>
         <ul className="space-y-2.5">
-          {lesson.ideas.map((idea, k) => (
+          {lesson.ideas?.map((idea, k) => (
             <li key={k} className="flex gap-3 leading-relaxed">
               <span className="text-accent font-semibold">{k + 1}.</span>
               <span>{idea}</span>

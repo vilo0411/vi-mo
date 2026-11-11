@@ -1,37 +1,7 @@
-export type WidgetId = "bakery" | "gdp-sort" | "contributions" | "loan" | "real-rate" | "exchange" | "class-fund" | "money-goods";
+export type WidgetId = "bakery" | "gdp-sort" | "contributions" | "loan" | "real-rate" | "exchange" | "class-fund" | "money-goods" | "money-bread";
 
-/** Giải thích theo cách Feynman cho từng bài: ví dụ đời thường, trẻ con cũng hiểu, kèm các thành phần tương tác. */
+/** Giải thích theo cách Feynman cho các bài chưa viết theo phố Cầu Tre: ví dụ đời thường, trẻ con cũng hiểu, kèm các thành phần tương tác. */
 export const FEYNMAN: Record<string, { title: string; story: string[]; widgets: WidgetId[] }> = {
-  "ba-con-so": {
-    title: "Cả nước là một tiệm bánh mì khổng lồ",
-    story: [
-      "Tưởng tượng cả nước chỉ làm đúng một thứ: bánh mì. Năm ngoái làm được 100 ổ, năm nay làm được 107 ổ. Vậy tiệm đã lớn thêm 7%. Đó là tăng trưởng GDP: năm nay làm ra nhiều hơn năm ngoái bao nhiêu.",
-      "Năm ngoái một ổ bánh giá 10.000 đồng, năm nay giá 10.400 đồng. Giá đã tăng 4%. Đó là lạm phát: cùng một món đồ, năm nay phải trả nhiều tiền hơn.",
-      "Tiệm có 100 người muốn làm thợ, nhưng chỉ có chỗ cho 98 người. 2 người còn lại đang tìm việc. Đó là tỷ lệ thất nghiệp 2%.",
-      "Bẫy hay gặp: tiền bán bánh tăng từ 1.000.000 lên 1.112.800 đồng, tức tăng 11,3%. Nhưng phần lớn chỗ tăng đó là do giá, chỉ 7% là bánh thật sự nhiều hơn. Kéo các thanh bên dưới để thấy.",
-    ],
-    widgets: ["bakery"],
-  },
-  "ai-tieu-tien": {
-    title: "GDP là một cái bánh pizza chia làm bốn miếng",
-    story: [
-      "Mỗi ổ bánh mì làm ra đều có người mua. Hỏi \"ai mua?\" là một cách đếm GDP.",
-      "Miếng lớn nhất là nhà mình mua để ăn: đó là tiêu dùng (C). Miếng thứ hai là chủ tiệm mua thêm lò nướng để mai làm được nhiều bánh hơn: đó là đầu tư (I). Miếng thứ ba là nhà trường mua bánh cho học sinh: đó là chi tiêu của Nhà nước (G).",
-      "Miếng cuối hơi lạ: bạn ở nước khác mua bánh của mình thì cộng vào (xuất khẩu X), nhưng bột mì mình mua của nước khác thì trừ đi (nhập khẩu M), vì phần đó không phải mình làm ra.",
-      "Bốn miếng cộng lại là cả cái bánh, tức 100% GDP. Chơi trò phân loại bên dưới xem bạn có xếp đúng miếng không.",
-    ],
-    widgets: ["gdp-sort", "contributions"],
-  },
-  "lai-suat": {
-    title: "Lãi suất là tiền thuê tiền",
-    story: [
-      "Bạn mượn xe đạp của bạn thân một tuần, khi trả bạn tặng thêm một gói kẹo để cảm ơn. Mượn tiền cũng vậy: trả lại số tiền đã mượn, cộng thêm một khoản \"cảm ơn\". Khoản đó tính theo phần trăm mỗi năm, gọi là lãi suất.",
-      "Ngân hàng Nhà nước giống như cửa hàng bán buôn tiền cho các ngân hàng. Khi cửa hàng bán buôn tăng giá, các ngân hàng bán lẻ (cho bạn vay) cũng tăng giá theo.",
-      "Thuê tiền đắt lên thì nhiều người thôi không thuê nữa: hoãn mua nhà, hoãn mở quán. Mọi người tiêu ít đi, nên giá cả bớt tăng. Đó là cách tăng lãi suất kéo lạm phát xuống.",
-      "Kéo thanh lãi suất bên dưới để xem tiền lãi tăng thế nào và bao nhiêu người trong xóm còn muốn vay.",
-    ],
-    widgets: ["loan", "real-rate"],
-  },
   "tien-dong-va-the-gioi": {
     title: "Tỷ giá là giá để đổi tiền",
     story: [

@@ -1,4 +1,5 @@
 import type { Shock } from "@/lib/simulate";
+import type { CastId, Voice } from "./world";
 
 /** Cú sốc tính từ đầu vòng. duration bỏ trống là kéo dài tới hết trò chơi. */
 export type RoundShock = Shock & { duration?: number };
@@ -12,6 +13,33 @@ export type Choice = {
   feedback: string;
   /** Vòng tiếp theo. Bỏ trống là kết thúc. */
   next?: string;
+  /** Vốn chính trị phải bỏ ra để chọn phương án này */
+  cost?: number;
+  /** Phản ứng của nền kinh tế với lựa chọn này: tính từ đầu năm sau và được kể trong câu chuyện năm sau */
+  aftermath?: Aftermath;
+  /** Lời nhân vật dành riêng cho lựa chọn này, ưu tiên hơn lời chung */
+  voices?: Voice[];
+};
+
+export type Aftermath = { label: string; story: string; shocks: RoundShock[] };
+
+/** Người chơi đoán chỉ số sau một năm sẽ đi hướng nào. lesson là bài cần ôn nếu đoán sai. */
+export type Predict = { node: string; q: string; lesson: string };
+
+/** Hai cố vấn nói ngược nhau. Lời khuyên có thể sai, không phải đáp án. */
+export type Debate = { hung: string; lan: string };
+
+/** Kết cục của một nhân vật ở màn "một năm sau": so số thật của chỉ số với value. Không có node là kết cục cố định. */
+export type Ending = { by: CastId; yes: string } & ({ node?: undefined } | { node: string; op: "<=" | ">="; value: number; no: string });
+
+/** Một diễn biến có thể xảy ra của kịch bản, ghi đè một phần các vòng. Người chơi chỉ biết khi sang năm đó. */
+export type Variant = {
+  id: string;
+  label: string;
+  rounds: Record<string, Partial<Omit<Round, "choices">> & { choices?: Record<string, Partial<Choice>> }>;
+  /** Diễn biến khó hơn thì chấm nới tay hơn, cùng ý nghĩa với Scenario.difficulty */
+  difficulty?: number;
+  endings?: Ending[];
 };
 
 /** Thêm một câu vào câu chuyện nếu một chỉ số đã lệch quá mức (theo mô hình) khi bước vào vòng này. */
@@ -26,6 +54,8 @@ export type Round = {
   event: RoundShock[];
   question: string;
   choices: Choice[];
+  predict?: Predict;
+  debate?: Debate;
 };
 
 /** Mục tiêu tính bằng số thật, so với giá trị bình quân năm cuối của nhiệm kỳ. */
@@ -55,7 +85,23 @@ export type Scenario = {
   /** Thực tế đã xảy ra, hiện ở cuối trò chơi */
   reality: string;
   relatedCase?: string;
+  /** Kịch bản diễn ra ở phố Cầu Tre: có đoán trước, cố vấn tranh luận, vốn chính trị, tin nhắn từ phố */
+  street?: true;
+  /** Các diễn biến có thể xảy ra, rút ngẫu nhiên khi bắt đầu lượt */
+  variants?: Variant[];
+  /** Các bài nên học trước */
+  lessons?: string[];
+  endings?: Ending[];
+  /** Chuyện gì xảy ra với phố khi người chơi bị cách chức, theo chỉ số gây ra */
+  firedStreet?: Record<string, string>;
 };
+
+const OIL_STREET: Ending[] = [
+  { by: "ba", node: "policy_rate", op: "<=", value: 4.7, yes: "Cô Ba đã vay được tiền, lò thứ hai đỏ lửa từ sáng sớm.", no: "Cô Ba vẫn chưa mua lò. Tờ báo giá lò nướng nằm im trong ngăn kéo." },
+  { by: "tu", node: "gdp_growth", op: ">=", value: 6, yes: "Anh Tư có việc đều, tổ thợ vừa nhận thêm người.", no: "Anh Tư đi làm ba ngày một tuần, những ngày còn lại chạy xe ôm." },
+  { by: "bay", node: "cpi", op: "<=", value: 4, yes: "Sổ tiết kiệm của bà Bảy giữ được sức mua.", no: "Tiền lãi của bà Bảy không theo kịp giá chợ, bà cắt bớt mấy món mỗi tuần." },
+];
+const OIL_ENDINGS: Ending[] = [...OIL_STREET, { by: "sau", yes: "Chú Sáu vẫn chạy xe, lại có lời như trước." }];
 
 export const SCENARIOS: Scenario[] = [
   {
@@ -64,7 +110,7 @@ export const SCENARIOS: Scenario[] = [
     period: "Giống năm 2022",
     level: "de",
     role: "Người điều hành chính sách",
-    teaser: "Xung đột ở nước ngoài đẩy giá dầu lên cao. Bạn chống lạm phát hay bảo vệ tăng trưởng?",
+    teaser: "Xung đột ở nước ngoài đẩy giá dầu lên cao, và phố Cầu Tre là nơi thấy đầu tiên. Bạn chống lạm phát hay bảo vệ tăng trưởng, khi chưa ai biết dầu sẽ hạ lúc nào?",
     goals: "Không để lạm phát vượt 4%, giữ tăng trưởng từ 6% trở lên.",
     difficulty: 1.3,
     baseline: { cpi: 3, gdp_growth: 7, fx_rate: 23200, reserves: 100, public_debt: 37, oil_price: 70, policy_rate: 4 },
@@ -73,32 +119,53 @@ export const SCENARIOS: Scenario[] = [
       { node: "cpi", op: "<=", value: 4 },
       { node: "gdp_growth", op: ">=", value: 6 },
     ],
+    street: true,
+    lessons: ["ba-con-so", "ai-tieu-tien", "vi-sao-gia-tang", "lai-suat"],
     start: "oil-1",
     rounds: {
       "oil-1": {
         id: "oil-1",
         title: "Năm thứ nhất: xăng tăng giá từng tuần",
-        story: "Giá dầu thế giới tăng hơn 50% trong vài tháng. Giá xăng trong nước tăng liên tục, cước vận tải và giá thực phẩm tăng theo. Đây là cú sốc cung: hàng hóa đắt lên vì chi phí sản xuất tăng, không phải vì người dân chi tiêu nhiều hơn.",
-        event: [{ node: "oil_price", size: 1.6, duration: 4 }],
+        story: "Giá dầu thế giới tăng hơn 50% trong vài tháng. Trên phố Cầu Tre, chú Sáu đổ xăng mỗi tuần một giá, cước giao hàng lên theo, bột về tiệm cô Ba cũng đắt hơn. Bạn nhận ra cơn sốt này rồi đấy: hàng đắt lên vì chi phí tăng, không phải vì cả phố tiêu nhiều hơn. Điều chưa ai biết là dầu sẽ hạ nhanh hay ở lại lâu.",
+        event: [{ node: "oil_price", size: 1.6, duration: 5 }],
         question: "Bạn làm gì?",
+        debate: {
+          hung: "Tăng lãi suất ngay. Để giá chạy thêm vài tháng là người dân mất niềm tin, lúc đó muốn kéo xuống còn đắt hơn nhiều.",
+          lan: "Dầu đắt đâu phải do dân chi nhiều. Tăng lãi thì xăng có rẻ đi không? Tôi sợ ta làm khổ cô Ba mà chú Sáu vẫn phải đổ xăng giá đó.",
+        },
+        predict: { node: "cpi", q: "Với quyết định này, cuối năm lạm phát sẽ đi đâu so với bây giờ?", lesson: "vi-sao-gia-tang" },
         choices: [
           {
             id: "rate",
             label: "Tăng lãi suất",
             detail: "Thắt chặt tiền tệ để kìm lạm phát.",
+            cost: 1,
             shocks: [{ node: "policy_rate", size: 1 }],
             feedback: "Lạm phát bớt tăng, nhưng lãi suất cao không làm dầu rẻ đi. Bạn đang hãm cầu để bù cho một cú sốc từ phía cung, nên tăng trưởng chịu thiệt.",
+            voices: [{ by: "ba", text: "Tôi hoãn mua lò rồi đấy. Vay bây giờ thì tiền lời cả tháng chỉ đủ trả lãi." }],
+            aftermath: {
+              label: "doanh nghiệp hoãn đầu tư",
+              story: "Cô Ba hoãn mua lò, công trình sửa tiệm của anh Tư dừng lại. Nhiều người trên phố cũng làm y như vậy.",
+              shocks: [{ node: "investment", size: -0.2, duration: 4 }],
+            },
             next: "oil-2",
           },
           {
             id: "tax",
             label: "Giảm thuế xăng dầu",
             detail: "Chính phủ giảm thuế để giá xăng bán lẻ tăng ít hơn.",
+            cost: 2,
             shocks: [
-              { node: "cpi", size: -0.25, duration: 4 },
-              { node: "fiscal_balance", size: -0.4, duration: 4 },
+              { node: "cpi", size: -0.25, duration: 5 },
+              { node: "fiscal_balance", size: -0.4, duration: 5 },
             ],
             feedback: "Đánh trúng nguồn gốc: giá xăng tăng chậm lại nên lạm phát dịu bớt mà không làm vay vốn đắt hơn. Ngân sách mất một khoản thu trong thời gian giảm thuế.",
+            voices: [{ by: "sau", text: "Mỗi bình xăng bớt được một ít. Cảm ơn nhé, nhưng nghe nói ngân sách đang kêu đấy." }],
+            aftermath: {
+              label: "ngân sách hụt thu",
+              story: "Bộ Tài chính báo cáo ngân sách hụt thu, và Quốc hội bắt đầu hỏi khoản giảm thuế này kéo dài tới bao giờ.",
+              shocks: [{ node: "fiscal_balance", size: -0.15, duration: 4 }],
+            },
             next: "oil-2",
           },
           {
@@ -106,7 +173,8 @@ export const SCENARIOS: Scenario[] = [
             label: "Không làm gì, chờ giá dầu hạ",
             detail: "Coi đây là cú sốc tạm thời và \"nhìn xuyên qua\" nó.",
             shocks: [],
-            feedback: "Lạm phát tăng lên trong thời gian giá dầu cao. Nếu cú sốc đúng là tạm thời và người dân không bắt đầu kỳ vọng giá còn tăng mãi, đây có thể là cách ít tốn kém nhất.",
+            feedback: "Bạn đặt cược rằng cơn sốt sẽ tự qua. Lạm phát tăng trong lúc dầu còn cao, và kết quả cược này phải sang năm mới biết.",
+            voices: [{ by: "bay", text: "Giá chợ lên từng tuần mà sao chẳng thấy ai làm gì vậy?" }],
             next: "oil-2",
           },
         ],
@@ -114,10 +182,15 @@ export const SCENARIOS: Scenario[] = [
       "oil-2": {
         id: "oil-2",
         title: "Năm thứ hai: giá dầu hạ nhiệt",
-        story: "Xung đột lắng xuống, giá dầu quay về mức cũ. Những gì bạn đã làm năm ngoái vẫn đang tác động lên nền kinh tế.",
+        story: "Xung đột lắng xuống, giá dầu quay về mức cũ. Chú Sáu đổ xăng rẻ hơn hẳn. Những gì bạn đã làm năm ngoái thì vẫn đang tác động lên nền kinh tế.",
         storyIf: [{ node: "gdp_growth", below: -0.15, text: "Tăng trưởng đã chậm lại rõ rệt, doanh nghiệp than đơn hàng yếu." }],
         event: [],
         question: "Bây giờ bạn làm gì?",
+        debate: {
+          hung: "Đừng vội nới. Lạm phát vừa hạ mà nới ngay thì mọi công sức năm ngoái đổ sông đổ biển.",
+          lan: "Cơn sốt đã qua, phố cần việc làm. Giữ lãi cao thêm một năm nữa là phạt anh Tư vì một lỗi không phải của anh ấy.",
+        },
+        predict: { node: "gdp_growth", q: "Với quyết định này, cuối năm tăng trưởng sẽ đi đâu so với bây giờ?", lesson: "lai-suat" },
         choices: [
           {
             id: "unwind",
@@ -137,11 +210,65 @@ export const SCENARIOS: Scenario[] = [
             id: "stimulus",
             label: "Kích cầu bằng chi tiêu công",
             detail: "Bù lại phần tăng trưởng đã mất.",
+            cost: 2,
             shocks: [{ node: "gov_spending", size: 0.6 }],
             feedback: "Tăng trưởng được đẩy lên, nhưng nợ công tăng và lạm phát có thể quay lại vì tổng cầu tăng.",
           },
         ],
       },
+    },
+    variants: [
+      { id: "tam-thoi", label: "Dầu hạ sau một năm", difficulty: 1.1, rounds: {} },
+      {
+        id: "keo-dai",
+        label: "Dầu ở lại cao thêm một năm",
+        difficulty: 0.7,
+        endings: [...OIL_STREET, { by: "sau", yes: "Hai năm xăng đắt, chú Sáu đã bán một chiếc xe. Chiếc còn lại chỉ chạy tuyến gần." }],
+        rounds: {
+          "oil-1": {
+            choices: {
+              "look-through": {
+                aftermath: {
+                  label: "giá tăng lan khắp phố",
+                  story: "Dầu chưa hạ, cũng chưa thấy ai ra tay. Chú Sáu tăng cước, cô Ba tăng giá bánh, và cả phố bắt đầu tin rằng giá sẽ còn lên.",
+                  shocks: [{ node: "cpi", size: 0.3, duration: 4 }],
+                },
+              },
+            },
+          },
+          "oil-2": {
+            title: "Năm thứ hai: dầu chưa chịu hạ",
+            story: "Xung đột kéo dài hơn mọi dự báo. Giá dầu vẫn cao, chú Sáu đã bán bớt một chiếc xe. Cú sốc tưởng tạm thời giờ bước sang năm thứ hai.",
+            event: [{ node: "oil_price", size: 1.2, duration: 5 }],
+            debate: {
+              hung: "Tôi đã nói rồi: đây không còn là chuyện tạm thời. Lúc này mà nới lỏng là mất hết uy tín.",
+              lan: "Dầu cao lâu thì phố càng yếu. Lãi suất vẫn không làm dầu rẻ đi, phải đỡ trực tiếp cho người chịu giá xăng.",
+            },
+            choices: {
+              unwind: {
+                feedback: "Bạn nới lỏng trong lúc dầu vẫn cao. Tăng trưởng được đỡ một phần, nhưng lạm phát mất thêm một lực kìm đúng lúc cú sốc còn đang đẩy lên.",
+              },
+              keep: {
+                feedback: "Bạn giữ nguyên trong năm dầu thứ hai. Không thêm rủi ro, nhưng cũng không đỡ gì cho người đang chịu giá xăng.",
+              },
+              stimulus: {
+                label: "Gia hạn giảm thuế xăng dầu",
+                detail: "Đỡ trực tiếp cho giá xăng thêm một năm, đổi lại ngân sách mất thêm khoản thu.",
+                shocks: [
+                  { node: "cpi", size: -0.25, duration: 5 },
+                  { node: "fiscal_balance", size: -0.4, duration: 5 },
+                ],
+                feedback: "Bạn đỡ thẳng vào nguồn gốc của cơn sốt thêm một năm. Giá xăng dịu bớt, còn ngân sách trả giá cho khoản thu đã mất.",
+              },
+            },
+          },
+        },
+      },
+    ],
+    endings: OIL_ENDINGS,
+    firedStreet: {
+      cpi: "Giá trên phố đã lên tới mức cô Ba ngừng bán ổ nhỏ, và bà Bảy đổi tiền tiết kiệm sang vàng.",
+      gdp_growth: "Công trình dừng hẳn, tổ thợ của anh Tư giải tán, và tiệm cô Ba đóng cửa sớm vì vắng khách.",
     },
     reality:
       "Năm 2022 giá dầu Brent bình quân gần 100 USD/thùng. Việt Nam chọn giảm thuế bảo vệ môi trường với xăng dầu và dùng quỹ bình ổn giá, thay vì tăng lãi suất vì lý do giá dầu. Lạm phát cả năm giữ ở khoảng 3,2%, trong mục tiêu. Nhiều ngân hàng trung ương coi giá dầu là cú sốc cung tạm thời và tránh phản ứng quá mạnh, trừ khi lạm phát bắt đầu lan rộng.",

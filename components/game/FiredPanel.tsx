@@ -1,9 +1,13 @@
+import Link from "next/link";
+import { LESSONS } from "@/content/lessons";
 import type { FireRule } from "@/lib/game";
+import { FIRE_LESSON } from "@/lib/world";
 import { formatReal } from "@/lib/game";
 import SpeakButton from "./Speak";
 
 /** Màn bị cách chức: chỉ số nào vượt ngưỡng, từ quý nào. */
-export default function FiredPanel({ rule, real, year, quarter, children }: { rule: FireRule; real: number; year: number; quarter: number; children?: React.ReactNode }) {
+export default function FiredPanel({ rule, real, year, quarter, street, children }: { rule: FireRule; real: number; year: number; quarter: number; street?: string; children?: React.ReactNode }) {
+  const lesson = LESSONS.find((l) => l.slug === FIRE_LESSON[rule.node]);
   return (
     <div className="anim-pop rounded-xl border-2 p-5 space-y-3" style={{ borderColor: "var(--down)" }}>
       <div className="text-xs font-medium" style={{ color: "var(--down)" }}>
@@ -23,7 +27,12 @@ export default function FiredPanel({ rule, real, year, quarter, children }: { ru
         </b>
         . Quốc hội và thị trường mất kiên nhẫn, nhiệm kỳ của bạn dừng ở đây.
       </p>
-      <p className="text-sm text-muted">Xem ô giải thích ở trên để biết vì sao chỉ số đi tới mức này, rồi thử lại với hướng khác.</p>
+      {street && <p className="leading-relaxed rounded-lg bg-surface-2 p-3">{street}</p>}
+      {lesson && (
+        <p className="text-sm">
+          Mấu chốt nằm ở bài <Link href={`/lo-trinh/${lesson.slug}`} className="text-accent underline decoration-dotted underline-offset-2">{lesson.title}</Link>. Ôn lại rồi thử hướng khác.
+        </p>
+      )}
       {children}
     </div>
   );

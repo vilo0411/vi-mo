@@ -27,6 +27,8 @@ function read(): Progress {
       sandboxBest: typeof p.sandboxBest === "number" ? p.sandboxBest : 0,
       seenItems: p.seenItems ?? {},
       savedItems: p.savedItems ?? {},
+      losses: p.losses ?? {},
+      macroPractice: p.macroPractice ?? {},
     };
   } catch {
     return EMPTY_PROGRESS;
@@ -71,7 +73,7 @@ export function useProgress() {
 
   const completeLesson = useCallback((slug: string) => {
     const p = read();
-    write({ ...p, lessons: { ...p.lessons, [slug]: true } });
+    if (!p.lessons[slug]) commit(p, { ...p, lessons: { ...p.lessons, [slug]: true } });
   }, []);
 
   /** Đánh dấu đã mở một mục trong thư viện. Không tính XP. */
@@ -99,6 +101,12 @@ export function useProgress() {
     return commit(p, next, run, { newRecord: prevBest !== undefined && run.points > prevBest });
   }, []);
 
+  /** Ghi một lần bị cách chức. Không có XP, nhưng vẫn tính là ngày có chơi. */
+  const recordLoss = useCallback((scenarioId: string) => {
+    const p = read();
+    commit(p, { ...p, losses: { ...p.losses, [scenarioId]: (p.losses[scenarioId] ?? 0) + 1 } });
+  }, []);
+
   /** Ghi một bài tính đã giải. clean: đúng ngay lần đầu, không gợi ý. daily: đây là bài của hôm nay. */
   const solveProblem = useCallback((id: string, opts: { clean?: boolean; daily?: boolean } = {}): Reward => {
     const p = read();
@@ -124,5 +132,11 @@ export function useProgress() {
     return commit(p, { ...p, sandboxBest: Math.max(p.sandboxBest, years) }, undefined, { newRecord: years > p.sandboxBest && p.sandboxBest > 0 });
   }, []);
 
-  return { progress, loaded, completeLesson, markSeen, toggleSaved, recordRun, solveProblem, recordQuiz, recordSandbox };
+  const recordMacroPractice = useCallback((key: string, points: number) => {
+    const p = read();
+    const best = Math.max(p.macroPractice[key]?.best ?? 0, points);
+    write({ ...p, macroPractice: { ...p.macroPractice, [key]: { best, latest: points } } });
+  }, []);
+
+  return { progress, loaded, completeLesson, markSeen, toggleSaved, recordRun, recordLoss, solveProblem, recordQuiz, recordSandbox, recordMacroPractice };
 }

@@ -21,9 +21,9 @@ export function yearStats(scenario: Scenario, before: Record<string, number[]>, 
 }
 
 /** Lời kể tổng kết năm, đúng như nút Nghe ở bảng tổng kết sẽ đọc. */
-export function yearNarration(scenario: Scenario, year: number, before: Record<string, number[]>, after: Record<string, number[]>, t0: number, t1: number, feedback: string, next: string) {
+export function yearNarration(scenario: Scenario, year: number, before: Record<string, number[]>, after: Record<string, number[]>, t0: number, t1: number, feedback: string, next: string, voicesText?: string) {
   const st = yearStats(scenario, before, after, t0, t1);
-  return narrateYear(year, st.goods, st.bads, st.trust0, st.trust1, feedback, next);
+  return narrateYear(year, st.goods, st.bads, st.trust0, st.trust1, feedback, next, scenario.street ? { voices: voicesText ?? "" } : undefined);
 }
 
 /** Tóm tắt một năm: các chỉ số chấm điểm trước và sau quyết định, nhận xét, và xem lại từng quý. */
@@ -42,7 +42,13 @@ export default function YearSummary({
   attBefore,
   attAfter,
   next = "",
+  voicesText,
+  street,
 }: {
+  /** Lời nhân vật để đọc trong lời kể */
+  voicesText?: string;
+  /** Phần riêng của kịch bản ở phố: kết quả dự đoán, tin nhắn từ phố */
+  street?: React.ReactNode;
   /** Câu kết của lời kể: mời sang năm sau, hoặc kết quả nhiệm kỳ */
   next?: string;
   scenario: Scenario;
@@ -79,13 +85,19 @@ export default function YearSummary({
           {goods > bads ? "Năm này đi đúng hướng nhiều hơn" : goods < bads ? "Năm này cái giá khá đắt" : "Năm này được mất ngang nhau"}
         </h3>
         <p className="text-sm text-muted mt-0.5">
-          {goods} chỉ số tốt lên, {bads} chỉ số xấu đi. Tín nhiệm{" "}
-          <b className="font-medium tabular-nums" style={{ color: trust1 >= trust0 ? "var(--up)" : "var(--down)" }}>
-            {trust0} → {trust1}
-          </b>
-          .
+          {goods} chỉ số tốt lên, {bads} chỉ số xấu đi.
+          {!scenario.street && (
+            <>
+              {" "}Tín nhiệm{" "}
+              <b className="font-medium tabular-nums" style={{ color: trust1 >= trust0 ? "var(--up)" : "var(--down)" }}>
+                {trust0} → {trust1}
+              </b>
+              .
+            </>
+          )}
         </p>
       </div>
+      {street}
       <table className="w-full text-sm">
         <thead>
           <tr className="text-xs text-muted text-left">
@@ -121,7 +133,7 @@ export default function YearSummary({
           <SpeakButton
             id={`year-${year}`}
             auto
-            text={narrateYear(year, goods, bads, trust0, trust1, feedback, next)}
+            text={yearNarration(scenario, year, before, after, t0, t1, feedback, next, voicesText)}
           />
         </div>
         {feedback}

@@ -1,7 +1,7 @@
 import { INDICATORS } from "@/content/indicators";
 import { SIM_LINKS } from "@/content/links";
 import { INDICATOR_BY_ID } from "@/content/indicators";
-import type { Choice, Round, RoundShock, Scenario, Target } from "@/content/scenarios";
+import type { Aftermath, Choice, Round, RoundShock, Scenario, Target } from "@/content/scenarios";
 import { simulateShocks, type TimedShock } from "./simulate";
 import { findPaths } from "./paths";
 import { explainPath, type WhyStep } from "./why";
@@ -19,7 +19,11 @@ export type Step = {
   guidance?: Guidance;
   /** Người chơi đã hỏi cố vấn trước khi chọn */
   advised?: boolean;
+  /** Dự đoán của người chơi trước khi xem kết quả năm đó */
+  guess?: Direction;
 };
+
+export type Direction = "up" | "flat" | "down";
 
 export type Guidance = "hawk" | "neutral" | "dove";
 
@@ -84,14 +88,33 @@ export const SCOREBOARD: { id: string; bad: "up" | "down"; weight: number; label
 
 const IDS = INDICATORS.filter((i) => !i.concept).map((i) => i.id);
 
+/** Ráp một diễn biến vào kịch bản. Kết quả là kịch bản thường, nên các hàm mô phỏng không cần biết tới diễn biến. */
+export function resolveVariant(scenario: Scenario, variantId: string | undefined): Scenario {
+  const variant = scenario.variants?.find((v) => v.id === variantId);
+  if (!variant) return scenario;
+  const rounds = { ...scenario.rounds };
+  for (const [id, patch] of Object.entries(variant.rounds)) {
+    const { choices, ...rest } = patch;
+    const round = rounds[id];
+    rounds[id] = { ...round, ...rest, choices: round.choices.map((c) => ({ ...c, ...choices?.[c.id] })) };
+  }
+  return { ...scenario, rounds, difficulty: variant.difficulty ?? scenario.difficulty, endings: variant.endings ?? scenario.endings };
+}
+
+/** Rút một diễn biến. r trong khoảng [0, 1). */
+export function pickVariant(scenario: Scenario, r: number): string | undefined {
+  const list = scenario.variants;
+  return list?.length ? list[Math.floor(r * list.length)].id : undefined;
+}
+
 export function shocksFor(scenario: Scenario, steps: Step[], upToRound = steps.length): TimedShock[] {
   return sourcesFor(scenario, steps.slice(0, upToRound)).flatMap((src) => src.shocks);
 }
 
 /** Chạy mô phỏng cho các lựa chọn đã chọn, thêm một năm sau quyết định cuối để thấy hậu quả. */
-export function runGame(scenario: Scenario, steps: Step[]) {
+export function runGame(scenario: Scenario, steps: Step[], maxYear?: number) {
   const periods = (steps.length + 1) * ROUND_PERIODS;
-  return { result: simulateShocks(SIM_LINKS, IDS, shocksFor(scenario, steps), periods), periods };
+  return { result: simulateShocks(SIM_LINKS, IDS, sourcesFor(scenario, steps, maxYear).flatMap((src) => src.shocks), periods), periods };
 }
 
 /**
@@ -185,14 +208,14 @@ export function finalResult(scenario: Scenario, result: Record<string, number[]>
 }
 
 /** Câu chuyện của vòng, thêm những câu phản ánh hậu quả từ các lựa chọn trước. */
-export function storyFor(round: Round, result: Record<string, number[]>, t: number): string[] {
+export function storyFor(round: Round, result: Record<string, number[]>, t: number, aftermath?: string): string[] {
   const extra = (round.storyIf ?? [])
     .filter((c) => {
       const v = result[c.node]?.[t] ?? 0;
       return (c.above !== undefined && v > c.above) || (c.below !== undefined && v < c.below);
     })
     .map((c) => c.text);
-  return [round.story, ...extra];
+  return [round.story, ...(aftermath ? [aftermath] : []), ...extra];
 }
 
 export function describeChange(v: number): string {
@@ -325,8 +348,22 @@ function pushTalk(out: Source[], step: Step, action: RoundShock[], k: number, st
   out.push({ key: `y${k + 1}-talk`, kind: "you", year: k + 1, label, shocks: shocks.map((e) => ({ ...e, start })), talk: true });
 }
 
-/** Tách các cú sốc theo nguồn, đi đúng nhánh mà người chơi đã chọn (giống shocksFor). */
-export function sourcesFor(scenario: Scenario, steps: Step[]): Source[] {
+/** Hậu quả của lựa chọn năm k bắt đầu từ đầu năm sau, kể cả khi đó là năm sau nhiệm kỳ. */
+function pushAftermath(out: Source[], a: Aftermath | undefined, k: number) {
+  if (!a?.shocks.length) return;
+  const start = (k + 1) * ROUND_PERIODS;
+  out.push({ key: `y${k + 2}-after`, kind: "event", year: k + 2, label: a.label, shocks: a.shocks.map((e) => ({ ...e, start })) });
+}
+
+/**
+ * Tách các cú sốc theo nguồn, đi đúng nhánh mà người chơi đã chọn (giống shocksFor).
+ * maxYear bỏ các nguồn của những năm sau đó, để chưa lộ chuyện năm sau khi đang kể năm này.
+ */
+export function sourcesFor(scenario: Scenario, steps: Step[], maxYear = Infinity): Source[] {
+  return allSources(scenario, steps).filter((src) => src.year <= maxYear);
+}
+
+function allSources(scenario: Scenario, steps: Step[]): Source[] {
   const out: Source[] = [];
   let roundId: string | undefined = scenario.start;
   for (let k = 0; k <= steps.length && roundId; k++) {
@@ -338,6 +375,7 @@ export function sourcesFor(scenario: Scenario, steps: Step[]): Source[] {
     if (step.choiceId === CUSTOM) {
       out.push({ key: `y${k + 1}-you`, kind: "you", year: k + 1, label: "D. Tự đặt con số", shocks: (step.custom ?? []).map((e) => ({ ...e, start })) });
       pushTalk(out, step, step.custom ?? [], k, start);
+      if (round.choices.length) pushAftermath(out, nearestChoice(round, step.custom ?? []).aftermath, k);
       roundId = step.next;
       continue;
     }
@@ -345,6 +383,7 @@ export function sourcesFor(scenario: Scenario, steps: Step[]): Source[] {
     const choice = round.choices[idx];
     out.push({ key: `y${k + 1}-you`, kind: "you", year: k + 1, label: `${LETTERS[idx]}. ${choice.label}`, shocks: choice.shocks.map((e) => ({ ...e, start })) });
     pushTalk(out, step, choice.shocks, k, start);
+    pushAftermath(out, choice.aftermath, k);
     roundId = choice.next;
   }
   return out;
@@ -353,9 +392,9 @@ export function sourcesFor(scenario: Scenario, steps: Step[]): Source[] {
 /** Kết quả mô phỏng của từng nguồn khi chạy riêng. Mô hình tuyến tính nên cộng các phần lại đúng bằng kết quả chung. */
 export type Attribution = { sources: Source[]; parts: Record<string, Record<string, number[]>> };
 
-export function attribute(scenario: Scenario, steps: Step[]): Attribution {
+export function attribute(scenario: Scenario, steps: Step[], maxYear?: number): Attribution {
   const periods = (steps.length + 1) * ROUND_PERIODS;
-  const sources = sourcesFor(scenario, steps);
+  const sources = sourcesFor(scenario, steps, maxYear);
   const parts: Attribution["parts"] = {};
   for (const src of sources) parts[src.key] = simulateShocks(SIM_LINKS, IDS, src.shocks, periods);
   return { sources, parts };
@@ -561,4 +600,59 @@ export function checkFired(scenario: Scenario, result: Record<string, number[]>,
       if (breaches(rule, realAt(rule.node, t)) && breaches(rule, realAt(rule.node, t - 1))) return { t, rule, real: realAt(rule.node, t) };
     }
   return null;
+}
+
+// ---------- Đoán trước và vốn chính trị ----------
+
+/** Dưới mức này (điểm %, hoặc % với chỉ số tính theo tỷ lệ) coi như chỉ số đứng yên. */
+const FLAT_BAND = 0.2;
+
+/** Hướng đi thật của chỉ số, so số người chơi nhìn thấy trước khi chọn với số cuối năm. */
+export function predictionTruth(id: string, before: number, after: number): Direction {
+  const k = REAL_SCALE[id]?.k ?? 1;
+  const d = (after - before) * k;
+  return Math.abs(d) < FLAT_BAND ? "flat" : d > 0 ? "up" : "down";
+}
+
+export const CAPITAL_START = 3;
+export const CAPITAL_MAX = 5;
+/** Lệch mục tiêu trong khoảng này chưa mất vốn: cú sốc đầu kỳ khó tránh, chỉ phạt khi để trượt xa. */
+const SLIP_MARGIN = 1;
+
+export type CapitalYear = { year: number; spent: number; guessed: boolean | null; truth: Direction | null; slipped: boolean; after: number };
+
+/** Lựa chọn của một bước trong kịch bản, kể cả phương án tự đặt (lấy theo phương án gần nhất). */
+function pricedChoice(scenario: Scenario, step: Step): Choice {
+  const round = scenario.rounds[step.roundId];
+  return step.choiceId === CUSTOM ? nearestChoice(round, step.custom ?? []) : round.choices.find((c) => c.id === step.choiceId)!;
+}
+
+/** Từng năm đã xong: trừ vốn đã tiêu, cộng khi đoán đúng, trừ khi mục tiêu đang trượt xa. */
+export function capitalYears(scenario: Scenario, steps: Step[]): CapitalYear[] {
+  const out: CapitalYear[] = [];
+  let capital = CAPITAL_START;
+  steps.forEach((step, k) => {
+    const round = scenario.rounds[step.roundId];
+    const spent = pricedChoice(scenario, step).cost ?? 0;
+    const upTo = steps.slice(0, k + 1);
+    const t1 = (k + 1) * ROUND_PERIODS;
+    const { result } = runGame(scenario, upTo, k + 1);
+    let truth: Direction | null = null;
+    let guessed: boolean | null = null;
+    if (round.predict) {
+      const t0 = k * ROUND_PERIODS;
+      const seen = runGame(scenario, steps.slice(0, k)).result;
+      const id = round.predict.node;
+      truth = predictionTruth(id, seen[id]?.[t0] ?? 0, result[id]?.[t1] ?? 0);
+      guessed = step.guess ? step.guess === truth : null;
+    }
+    const slipped = checkTargets(scenario, lastYearValues(result, t1)).some((x) => !x.ok && Math.abs(x.real - x.value) > SLIP_MARGIN);
+    capital = Math.min(CAPITAL_MAX, Math.max(0, capital - spent + (guessed ? 1 : 0) - (slipped ? 1 : 0)));
+    out.push({ year: k + 1, spent, guessed, truth, slipped, after: capital });
+  });
+  return out;
+}
+
+export function capitalNow(scenario: Scenario, steps: Step[]) {
+  return capitalYears(scenario, steps).at(-1)?.after ?? CAPITAL_START;
 }

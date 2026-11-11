@@ -3,6 +3,7 @@ import ScenarioList from "@/components/ScenarioList";
 import ProblemSet from "@/components/ProblemSet";
 import PlayerCard from "@/components/PlayerCard";
 import DailyChallenge from "@/components/DailyChallenge";
+import { PRACTICE_GAMES } from "@/content/macro-practice";
 
 export const metadata = { title: "Thử thách · Vĩ mô Việt Nam" };
 
@@ -22,6 +23,18 @@ export default function ChallengesPage() {
         <p className="text-sm text-muted">
           Chưa quen các khái niệm? Học <Link href="/lo-trinh" className="text-accent">lộ trình 6 bài</Link> trước sẽ dễ chơi hơn.
         </p>
+      </section>
+
+      <section className="space-y-4" aria-labelledby="luyen-doc-so-lieu">
+        <h2 id="luyen-doc-so-lieu" className="text-xl font-semibold">Luyện đọc số liệu</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {Object.entries(PRACTICE_GAMES).map(([id, game]) => (
+            <Link key={id} href={`/thu-thach/${id}`} className="group rounded-xl border border-line bg-surface p-4 hover:border-accent">
+              <h3 className="font-semibold group-hover:text-accent">{game.title} <span aria-hidden>→</span></h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted">{game.description}</p>
+            </Link>
+          ))}
+        </div>
       </section>
 
       <section className="space-y-4">

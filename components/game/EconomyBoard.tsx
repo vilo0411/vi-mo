@@ -7,6 +7,7 @@ import { SIM_LINKS, linkKey } from "@/content/links";
 import type { Round, RoundShock, Scenario } from "@/content/scenarios";
 import { breaches, describeChange, describeShock, formatReal, REAL_SCALE, ROUND_PERIODS, SCOREBOARD, toReal, type FireRule } from "@/lib/game";
 import MacroGraph, { type NodeState } from "../MacroGraph";
+import CapitalBar from "./CapitalBar";
 import TrustBar from "./TrustBar";
 
 // Thẻ khái niệm không có trong mô phỏng.
@@ -19,6 +20,7 @@ export default function EconomyBoard({
   result,
   tView,
   trust,
+  capital,
   round,
   myShocks,
   rules = [],
@@ -27,6 +29,8 @@ export default function EconomyBoard({
   result: Record<string, number[]>;
   tView: number;
   trust: number;
+  /** Có giá trị thì hiện vốn chính trị thay cho Tín nhiệm */
+  capital?: number;
   /** Vòng đang chơi, để đánh dấu chỗ sự kiện tác động */
   round?: Round;
   /** Cú sốc của quyết định vừa chọn, để đánh dấu chỗ bạn tác động */
@@ -89,7 +93,7 @@ export default function EconomyBoard({
 
   return (
         <div className="space-y-4 min-w-0">
-          <TrustBar value={trust} />
+          {capital === undefined ? <TrustBar value={trust} /> : <CapitalBar value={capital} />}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             {SCOREBOARD.map((m) => {
               const v = result[m.id][tView];

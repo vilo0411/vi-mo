@@ -4,10 +4,11 @@ import { LINKS, SIM_LINKS } from "@/content/links";
 import { INDICATORS } from "@/content/indicators";
 import { SERIES } from "./data";
 import { findPaths } from "./paths";
-import { allPlaythroughs, attribute, checkFired, checkTargets, CUSTOM, eventLabel, explainQuarter, guidanceShocks, GUIDANCE, describeShock, finalResult, leversToShocks, nearestChoice, runGame, shocksFor, storyFor, toReal } from "./game";
+import { allPlaythroughs, attribute, CAPITAL_START, capitalYears, checkFired, checkTargets, CUSTOM, eventLabel, explainQuarter, guidanceShocks, GUIDANCE, describeShock, finalResult, leversToShocks, nearestChoice, pickVariant, predictionTruth, resolveVariant, ROUND_PERIODS, runGame, shocksFor, sourcesFor, storyFor, toReal, type Step } from "./game";
+import { FIRE_LESSON, streetEndings, streetVoices } from "./world";
 import { PROBLEMS } from "@/content/problems";
 import { parseNumber } from "@/components/ProblemSet";
-import { SCENARIOS } from "@/content/scenarios";
+import { SCENARIOS, type Scenario } from "@/content/scenarios";
 import { LESSONS } from "@/content/lessons";
 import { exploreOrder, revealedFor } from "./explore";
 import { TERMS } from "@/content/glossary";
@@ -31,7 +32,7 @@ import { alignWithLag, lagCorrelation, pearson } from "./stats";
 import { bestContinuation, expertPath, taylorAdvice } from "./advisor";
 import { buildQuiz } from "./quiz";
 import { sandboxRound, sandboxScenario, sandboxStep } from "./sandbox";
-import { addDays, BADGE_BY_ID, BADGES, dailyPick, EMPTY_PROGRESS, isUnlocked, longestStreak, problemsMissing, rankOf, RANKS, settle, streak, totalXp, type Progress } from "./rewards";
+import { addDays, BADGE_BY_ID, BADGES, dailyPick, EMPTY_PROGRESS, isUnlocked, LESSON_XP, longestStreak, problemsMissing, rankOf, RANKS, settle, streak, totalXp, type Progress } from "./rewards";
 
 const L = (from: string, to: string, sign: 1 | -1, lag: 1 | 2 | 3, strength: number): Link => ({
   from, to, sign, lag, strength, mechanism: "",
@@ -405,10 +406,10 @@ describe("bản đồ con và bài học", () => {
     for (const i of INDICATORS) expect(firstMapWith(i.id), i.id).not.toBe("toan-bo");
   });
 
-  it("mỗi bài học có giải thích Feynman và ít nhất một thành phần tương tác", () => {
+  it("mỗi bài học có ít nhất một thành phần tương tác", () => {
     for (const l of LESSONS) {
-      expect(FEYNMAN[l.slug], l.slug).toBeDefined();
-      expect(FEYNMAN[l.slug].widgets.length, l.slug).toBeGreaterThan(0);
+      const widgets = l.beats ? l.beats.filter((b) => b.kind === "widget") : FEYNMAN[l.slug]?.widgets;
+      expect(widgets?.length, l.slug).toBeGreaterThan(0);
     }
   });
 
@@ -601,7 +602,7 @@ describe("giải thích từng quý", () => {
   });
 
   it("nguồn mang tên sự kiện trong câu chuyện và phương án đã chọn", () => {
-    expect(att.sources.map((x) => x.key)).toEqual(["y1-event", "y1-you", ...(r2.event.length ? ["y2-event"] : []), "y2-you"]);
+    expect(att.sources.map((x) => x.key)).toEqual(["y1-event", "y1-you", ...(r1.choices[0].aftermath ? ["y2-after"] : []), ...(r2.event.length ? ["y2-event"] : []), "y2-you"]);
     expect(att.sources[0].label).toBe(eventLabel(r1));
     expect(att.sources[1].label).toBe(`A. ${r1.choices[0].label}`);
   });
@@ -791,5 +792,135 @@ describe("giải thích cho người mới", () => {
     all.forEach((ns, q) => keys.push(...whyPicks(ns, q, whySeen(all.slice(0, q))).map(whyKey)));
     expect(keys.length).toBeGreaterThan(0);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe("phố Cầu Tre", () => {
+  const base = SCENARIOS.find((s) => s.id === "oil")!;
+  const variants = base.variants!.map((v) => resolveVariant(base, v.id));
+  const bestPoints = (sc: Scenario, keep: (st: Step[]) => boolean = () => true) =>
+    Math.max(...allPlaythroughs(sc).filter(keep).map((st) => { const { result, periods } = runGame(sc, st); return finalResult(sc, result, periods).points; }));
+  /** Mỗi năm đoán đúng: mức vốn cao nhất có thể có. */
+  const withRightGuesses = (sc: Scenario, st: Step[]) => {
+    const out: Step[] = [];
+    for (const s of st) {
+      const truth = capitalYears(sc, [...out, s]).at(-1)!.truth!;
+      out.push({ ...s, guess: truth });
+    }
+    return out;
+  };
+
+  it("bài viết theo phố có widget, tham chiếu và đáp án hợp lệ", () => {
+    const slugs = new Set(LESSONS.map((l) => l.slug));
+    const refOk = (id: string) => (id.startsWith("bai:") ? slugs.has(id.slice(4)) : !!INDICATOR_BY_ID[id] || TERMS.some((g) => g.id === id));
+    const written = LESSONS.filter((l) => l.beats);
+    expect(written.map((l) => l.slug)).toEqual(["ba-con-so", "ai-tieu-tien", "vi-sao-gia-tang", "lai-suat"]);
+    for (const l of written) {
+      expect(l.hook, l.slug).toBeTruthy();
+      for (const b of l.beats!) {
+        if (b.kind === "think") expect(b.options[b.answer], b.q).toBeDefined();
+        const text = b.kind === "think" ? `${b.q} ${b.reveal}` : b.kind === "widget" ? "" : b.kind === "formula" ? (b.note ?? "") : b.text;
+        for (const id of refsIn(text)) expect(refOk(id), `${l.slug}/${id}`).toBe(true);
+      }
+    }
+    expect(base.lessons!.every((s) => slugs.has(s))).toBe(true);
+    // Công thức chính xác đi trước ví dụ: trong mỗi bài, công thức đầu tiên đứng trước câu đoán và cảnh có con số.
+    for (const l of written) {
+      const beats = l.beats!;
+      const first = beats.findIndex((b) => b.kind === "formula");
+      const example = beats.findIndex((b) => b.kind === "think" || b.kind === "widget" || (b.kind === "scene" && /\d/.test(b.text.replace(/\[\[[^\]]+\]\]/g, ""))));
+      expect(first, l.slug).toBeGreaterThanOrEqual(0);
+      expect(first, l.slug).toBeLessThan(example);
+    }
+  });
+
+  it("năm đầu giống nhau ở mọi diễn biến, người chơi chỉ biết khi sang năm sau", () => {
+    const [a, b] = variants;
+    const pub = (sc: Scenario) => sc.rounds["oil-1"].choices.map((c) => [c.id, c.label, c.detail, c.cost]);
+    expect(pub(a)).toEqual(pub(b));
+    expect(a.rounds["oil-1"].story).toBe(b.rounds["oil-1"].story);
+    expect(a.rounds["oil-2"].story).not.toBe(b.rounds["oil-2"].story);
+    expect(pickVariant(base, 0)).toBe("tam-thoi");
+    expect(pickVariant(base, 0.99)).toBe("keo-dai");
+    expect(resolveVariant(SCENARIOS[1], undefined)).toBe(SCENARIOS[1]);
+  });
+
+  it("chờ giá dầu hạ không phải lúc nào cũng đúng: gần tốt nhất khi dầu hạ, tệ nhất khi dầu ở lại", () => {
+    const wait = (st: Step[]) => st[0].choiceId === "look-through";
+    const [temp, long] = variants;
+    expect(bestPoints(temp) - bestPoints(temp, wait)).toBeLessThanOrEqual(10);
+    expect(bestPoints(long, wait)).toBeLessThan(bestPoints(long, (st) => !wait(st)));
+    for (const sc of variants) expect(bestPoints(sc, wait), sc.id).toBeLessThan(bestPoints(sc));
+  });
+
+  it("đều có thể đạt 3 sao, và đường tốt nhất mua được nếu đoán đúng", () => {
+    for (const sc of variants) {
+      const stars = allPlaythroughs(sc).map((st) => { const { result, periods } = runGame(sc, st); return finalResult(sc, result, periods).stars; });
+      expect(Math.max(...stars)).toBe(3);
+      const ex = expertPath(sc);
+      const steps = withRightGuesses(sc, ex.steps);
+      let capital = CAPITAL_START;
+      for (let k = 0; k < steps.length; k++) {
+        const cost = sc.rounds[steps[k].roundId].choices.find((c) => c.id === steps[k].choiceId)!.cost ?? 0;
+        expect(cost, `${ex.steps[k].choiceId}`).toBeLessThanOrEqual(capital);
+        capital = capitalYears(sc, steps.slice(0, k + 1)).at(-1)!.after;
+      }
+    }
+  });
+
+  it("vốn chính trị: tiêu khi chọn, đoán đúng được thêm, không đổi kết quả mô phỏng", () => {
+    const [temp] = variants;
+    const pay = capitalYears(temp, [{ roundId: "oil-1", choiceId: "tax", guess: "down" }])[0];
+    expect(pay.spent).toBe(2);
+    expect(pay.guessed).toBe(false);
+    expect(pay.slipped).toBe(false);
+    expect(pay.after).toBe(1);
+    const right = capitalYears(temp, [{ roundId: "oil-1", choiceId: "tax", guess: "up" }])[0];
+    expect(right.after).toBe(2);
+    const a = runGame(temp, [{ roundId: "oil-1", choiceId: "tax" }]).result.cpi;
+    expect(runGame(temp, [{ roundId: "oil-1", choiceId: "tax", guess: "up" }]).result.cpi).toEqual(a);
+  });
+
+  it("hậu quả của lựa chọn tính từ đầu năm sau và được ghi là sự kiện của năm đó", () => {
+    const [, long] = variants;
+    const src = sourcesFor(long, [{ roundId: "oil-1", choiceId: "look-through" }]).find((x) => x.key === "y2-after")!;
+    expect(src.kind).toBe("event");
+    expect(src.shocks[0].start).toBe(ROUND_PERIODS);
+    const noAfter = sourcesFor(variants[0], [{ roundId: "oil-1", choiceId: "look-through" }]);
+    expect(noAfter.some((x) => x.key === "y2-after")).toBe(false);
+  });
+
+  it("hướng đi của chỉ số có vùng đứng yên", () => {
+    expect(predictionTruth("cpi", 0, 0.01)).toBe("flat");
+    expect(predictionTruth("cpi", 0, 0.5)).toBe("up");
+    expect(predictionTruth("gdp_growth", 0, -0.5)).toBe("down");
+  });
+
+  it("nhân vật lên tiếng theo chỉ số, lời riêng của lựa chọn được ưu tiên, kết cục theo số thật", () => {
+    const flat = { cpi: [0, 0], gdp_growth: [0, 0] };
+    expect(streetVoices(flat, 0, flat, 1)).toEqual([]);
+    const hot = { cpi: [0, 1], gdp_growth: [0, 0] };
+    const v = streetVoices(flat, 0, hot, 1);
+    expect(v.length).toBeGreaterThan(0);
+    expect(new Set(v.map((x) => x.by)).size).toBe(v.length);
+    const own = streetVoices(flat, 0, hot, 1, base.rounds["oil-1"].choices[0]);
+    expect(own[0].text).toBe(base.rounds["oil-1"].choices[0].voices![0].text);
+    const [temp, long] = variants;
+    expect(streetEndings(temp, {}).length).toBe(4);
+    expect(streetEndings(temp, {}).find((x) => x.by === "sau")!.text).not.toBe(streetEndings(long, {}).find((x) => x.by === "sau")!.text);
+    expect(streetEndings(temp, { cpi: 1 }).find((x) => x.by === "bay")!.text).toContain("không theo kịp");
+  });
+
+  it("bài học có XP, và kịch bản chưa nâng cấp không có phần của phố", () => {
+    expect(totalXp({ ...EMPTY_PROGRESS, lessons: { "ba-con-so": true } })).toBe(LESSON_XP);
+    for (const sc of SCENARIOS.filter((s) => s.id !== "oil")) {
+      expect(sc.street, sc.id).toBeUndefined();
+      expect(sc.variants, sc.id).toBeUndefined();
+      expect(Object.values(sc.rounds).some((r) => r.predict || r.debate || r.choices.some((c) => c.aftermath || c.cost)), sc.id).toBe(false);
+    }
+  });
+
+  it("mỗi luật cách chức trỏ tới một bài có thật", () => {
+    for (const slug of Object.values(FIRE_LESSON)) expect(LESSONS.some((l) => l.slug === slug), slug).toBe(true);
   });
 });

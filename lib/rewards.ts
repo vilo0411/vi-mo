@@ -1,5 +1,6 @@
 import { SCENARIOS, type Level, type Scenario } from "@/content/scenarios";
 import { PROBLEMS, type Problem } from "@/content/problems";
+import { LESSONS } from "@/content/lessons";
 
 /** Tiến độ của người chơi, lưu trong trình duyệt. XP không lưu riêng mà luôn tính lại từ đây. */
 export type Progress = {
@@ -26,9 +27,13 @@ export type Progress = {
   seenItems: Record<string, true>;
   /** Các mục người học lưu lại trong thư viện */
   savedItems: Record<string, true>;
+  /** Số lần bị cách chức ở mỗi thử thách */
+  losses: Record<string, number>;
+  /** Kỷ lục luyện đọc số liệu, theo trò và phiên bản câu hỏi. */
+  macroPractice: Record<string, { best: number; latest: number }>;
 };
 
-export const EMPTY_PROGRESS: Progress = { lessons: {}, stars: {}, best: {}, solved: {}, cleanSolves: {}, badges: {}, days: [], daily: {}, quiz: {}, sandboxBest: 0, seenItems: {}, savedItems: {} };
+export const EMPTY_PROGRESS: Progress = { lessons: {}, stars: {}, best: {}, solved: {}, cleanSolves: {}, badges: {}, days: [], daily: {}, quiz: {}, sandboxBest: 0, seenItems: {}, savedItems: {}, losses: {}, macroPractice: {} };
 
 /** Kết quả một lượt chơi thử thách, dùng cho các huy hiệu cần biết người chơi đã làm gì. */
 export type RunInfo = {
@@ -41,6 +46,8 @@ export type RunInfo = {
   usedAdvisor?: boolean;
   /** Có phát ngôn (không trung lập) và mọi lần phát ngôn đều khớp với hành động */
   talkConsistent?: boolean;
+  /** Ở kịch bản có phần đoán: đoán đúng mọi năm của nhiệm kỳ */
+  allGuessed?: boolean;
 };
 
 // ---------- XP và cấp bậc ----------
@@ -48,6 +55,7 @@ export type RunInfo = {
 export const LEVEL_MULT: Record<Level, number> = { de: 1, vua: 1.5, kho: 2 };
 export const PROBLEM_XP: Record<Level, number> = { de: 30, vua: 50, kho: 80 };
 export const BADGE_XP = 50;
+export const LESSON_XP = 40;
 export const DAILY_XP = 100;
 export const QUIZ_XP = 20;
 export const SANDBOX_YEAR_XP = 10;
@@ -63,7 +71,7 @@ export function problemXp(p: Problem, clean: boolean) {
 
 /** Tổng XP, tính lại hoàn toàn từ tiến độ nên chơi lại cùng một thử thách không cộng thêm. */
 export function totalXp(p: Progress) {
-  let xp = 0;
+  let xp = LESSONS.filter((l) => p.lessons[l.slug]).length * LESSON_XP;
   for (const s of SCENARIOS) xp += scenarioXp(s, p.stars[s.id] ?? 0);
   for (const q of PROBLEMS) if (p.solved[q.id]) xp += problemXp(q, !!p.cleanSolves[q.id]);
   xp += Object.keys(p.badges).length * BADGE_XP;
@@ -202,7 +210,7 @@ export const BADGES: Badge[] = [
   { id: "buffer", icon: "💰", title: "Giữ bộ đệm", desc: "Đạt từ 2 sao mà không bán đồng đô la dự trữ nào.", check: (_, r) => !!r && r.stars >= 2 && !r.soldReserves },
   { id: "hands-on", icon: "🎛️", title: "Tự tay điều hành", desc: "Đạt từ 2 sao khi có dùng phương án tự đặt con số.", check: (_, r) => !!r && r.stars >= 2 && r.usedCustom },
   { id: "high-score", icon: "🚀", title: "Điểm cao", desc: "Đạt từ 85 điểm trong một nhiệm kỳ.", check: (_, r) => !!r && r.points >= 85 },
-  { id: "self-made", icon: "🧭", title: "Tự lực", desc: "Đạt 3 sao mà không hỏi cố vấn lần nào.", check: (_, r) => !!r && r.stars >= 3 && !r.usedAdvisor },
+  { id: "self-made", icon: "🧭", title: "Tự lực", desc: "Đạt 3 sao bằng phán đoán của mình: không hỏi cố vấn, hoặc đoán đúng mọi năm ở kịch bản có phần đoán.", check: (_, r) => !!r && r.stars >= 3 && (r.allGuessed ?? !r.usedAdvisor) },
   { id: "walk-the-talk", icon: "🎙️", title: "Lời nói đi đôi việc làm", desc: "Đạt từ 2 sao, có phát ngôn và mọi lần phát ngôn đều khớp với hành động.", check: (_, r) => !!r && r.stars >= 2 && !!r.talkConsistent },
   { id: "quiz-3", icon: "🎓", title: "Hiểu bài", desc: "Trả lời đúng cả 3 câu quiz sau một nhiệm kỳ.", check: (p) => Object.values(p.quiz).some((n) => n >= 3) },
   { id: "sandbox-10", icon: "🪑", title: "Ghế vững", desc: "Trụ 10 năm ở chế độ tự do.", check: (p) => p.sandboxBest >= 10 },

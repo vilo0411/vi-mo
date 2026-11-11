@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { INDICATORS } from "@/content/indicators";
 import { FEATURED_KEYS, LIBRARY_CATEGORIES, LIBRARY_ITEMS, TYPE_LABELS, type LibraryCategory, type LibraryItem, type LibraryItemType } from "@/content/library";
+import { LESSONS } from "@/content/lessons";
 import { firstMapWith } from "@/content/maps";
+import { STREET } from "@/content/world";
 import { useProgress } from "@/lib/progress";
 import { fold } from "@/lib/text";
 
@@ -26,6 +28,10 @@ export default function Library() {
   const browsing = !needle && filter === "all";
   const featured = FEATURED_KEYS.map((k) => LIBRARY_ITEMS.find((it) => it.key === k)!);
   const saved = LIBRARY_ITEMS.filter((it) => progress.savedItems[it.key]);
+
+  const storyIndex = LESSONS.findIndex((l) => !progress.lessons[l.slug]);
+  const storyLesson = LESSONS[storyIndex];
+  const startedStory = loaded && LESSONS.some((l) => progress.lessons[l.slug]);
 
   const card = (it: LibraryItem) => (
     <LibraryCard key={it.key} item={it} seen={loaded && !!progress.seenItems[it.key]} saved={loaded && !!progress.savedItems[it.key]} onToggleSaved={() => toggleSaved(it.key)} />
@@ -70,9 +76,21 @@ export default function Library() {
       </div>
 
       {browsing && (
-        <section className="rounded-2xl border border-accent bg-accent-soft p-4 sm:p-5">
-          <h2 className="font-semibold">Mới bắt đầu? Đi theo thứ tự này</h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{featured.map(card)}</div>
+        <section className="rounded-2xl border border-accent bg-accent-soft p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-semibold">{startedStory ? `Tiếp tục ở ${STREET} · Tập ${storyIndex + 1}` : `Mới bắt đầu? Làm quen với ${STREET}`}</h2>
+            <p className="text-sm text-muted mt-1">{storyLesson ? storyLesson.question : "Bạn đã xem hết các tập hiện có. Vào thử thách để tự tay điều hành."}</p>
+          </div>
+          <Link href={storyLesson ? `/lo-trinh/${storyLesson.slug}` : "/thu-thach"} className="px-4 py-2 rounded-lg bg-accent text-white text-sm whitespace-nowrap">
+            {startedStory ? "Học tiếp" : "Bắt đầu tập 1"} →
+          </Link>
+        </section>
+      )}
+
+      {browsing && (
+        <section>
+          <h2 className="text-lg font-semibold mb-3">Hoặc tra cứu theo chủ đề</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{featured.map(card)}</div>
         </section>
       )}
 
